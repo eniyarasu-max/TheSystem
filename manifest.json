@@ -1,0 +1,21 @@
+{
+  "short_name": "SoloRPG",
+  "name": "Solo Leveling - College Student System",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/bottts/png?seed=SoloRPG",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/bottts/png?seed=SoloRPG",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#060412",
+  "theme_color": "#8b5cf6",
+  "display": "standalone",
+  "orientation": "portrait"
+}

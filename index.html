@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Solo Leveling - College Student System</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8b5cf6">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -255,7 +257,7 @@
       </div>
     </section>
 
-    <!-- NEW VIEW: ASSIGNMENT DEADLINES -->
+    <!-- VIEW: ASSIGNMENT DEADLINES -->
     <section id="deadlines-view" class="view-section">
       <div class="quests-header">
         <div>
@@ -268,7 +270,7 @@
       </div>
     </section>
 
-    <!-- NEW VIEW: CLASS TIMETABLE -->
+    <!-- VIEW: CLASS TIMETABLE -->
     <section id="timetable-view" class="view-section">
       <div class="quests-header">
         <div>
@@ -375,5 +377,10 @@
   </nav>
 
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Registration:', err));
+    }
+  </script>
 </body>
 </html>

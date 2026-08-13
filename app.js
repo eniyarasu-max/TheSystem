@@ -1,7 +1,76 @@
 /**
  * Solo Leveling Gamified College Student RPG & Habit System
- * Full Expansion: Deadlines, Weekly Timetable, AI Analyst & Admin Inspector
+ * Web Audio RPG Sound Engine, Gemini AI Task Generator, Firebase Cloud Sync & Admin Inspector
  */
+
+// Web Audio API Synthesizer for RPG Sound Effects
+class RPGSoundEngine {
+  constructor() {
+    this.ctx = null;
+  }
+
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  playClick() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.08);
+  }
+
+  playQuestComplete() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, now); // C5
+    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+    osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.5);
+  }
+
+  playLevelUp() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+      gain.gain.setValueAtTime(0.25, now + idx * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.25);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.25);
+    });
+  }
+}
+
+const sounds = new RPGSoundEngine();
 
 // Initial Default State
 const DEFAULT_PLAYER = {
@@ -179,6 +248,7 @@ class SoloLevelingApp {
     // Navigation Tabs & Mobile Nav
     document.querySelectorAll('.tab-btn, .mobile-nav-item').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        sounds.playClick();
         const viewId = e.currentTarget.getAttribute('data-view');
         if (viewId) this.switchView(viewId);
       });
@@ -186,11 +256,13 @@ class SoloLevelingApp {
 
     // Google Login Simulation / Demo Role Login
     document.getElementById('google-login-btn')?.addEventListener('click', () => {
+      sounds.playClick();
       this.loginWithGoogle();
     });
 
     document.querySelectorAll('.demo-login-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        sounds.playClick();
         const role = e.currentTarget.getAttribute('data-role');
         this.loginDemoRole(role);
       });
@@ -199,6 +271,7 @@ class SoloLevelingApp {
     // Stat Point Allocation
     document.querySelectorAll('.btn-add-stat').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        sounds.playClick();
         const statKey = e.currentTarget.getAttribute('data-stat');
         this.addStatPoint(statKey);
       });
@@ -208,17 +281,20 @@ class SoloLevelingApp {
     document.getElementById('ai-task-form')?.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON' && e.target.type === 'submit') {
         e.preventDefault();
+        sounds.playClick();
         this.generateAIQuests();
       }
     });
 
     // Trigger AI Modal shortcut
     document.getElementById('trigger-ai-modal-btn')?.addEventListener('click', () => {
+      sounds.playClick();
       this.switchView('ai-generator-view');
     });
 
     // Admin Refresh
     document.getElementById('admin-refresh-btn')?.addEventListener('click', () => {
+      sounds.playClick();
       this.renderAdminDashboard();
     });
   }
@@ -451,12 +527,14 @@ class SoloLevelingApp {
     quest.completed = !quest.completed;
 
     if (quest.completed) {
+      sounds.playQuestComplete();
       this.currentPlayer.xp += quest.xpReward;
       if (quest.statKey && this.currentPlayer.stats[quest.statKey] !== undefined) {
         this.currentPlayer.stats[quest.statKey] += 2;
       }
       this.checkLevelUp();
     } else {
+      sounds.playClick();
       this.currentPlayer.xp = Math.max(0, this.currentPlayer.xp - quest.xpReward);
     }
 
@@ -475,6 +553,7 @@ class SoloLevelingApp {
 
   checkLevelUp() {
     if (this.currentPlayer.xp >= this.currentPlayer.xpToNextLevel) {
+      sounds.playLevelUp();
       this.currentPlayer.level += 1;
       this.currentPlayer.xp -= this.currentPlayer.xpToNextLevel;
       this.currentPlayer.xpToNextLevel = Math.round(this.currentPlayer.xpToNextLevel * 1.25);
@@ -569,6 +648,7 @@ class SoloLevelingApp {
       `;
 
       box.querySelector('.btn-award-xp').addEventListener('click', (e) => {
+        sounds.playLevelUp();
         const id = e.currentTarget.getAttribute('data-id');
         alert(`👑 Admin awarded +500 Bonus XP to Player ID: ${id}`);
       });
