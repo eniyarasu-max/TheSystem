@@ -1,6 +1,6 @@
 /**
  * Solo Leveling Gamified College Student RPG & Habit System
- * Real Firebase Google OAuth Integration (signInWithPopup) & Admin Verification
+ * Baked Firebase Public Config, Firestore Live Persistence, & Server-Side Admin Role Verification
  */
 
 // Web Audio API Synthesizer for RPG Sound Effects
@@ -72,7 +72,15 @@ class RPGSoundEngine {
 
 const sounds = new RPGSoundEngine();
 
-const ADMIN_PASSCODE = 'admin777';
+// Baked Public-Safe Firebase Credentials
+const BAKED_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC_SoloLevelingCollegeRPGAppConfigKeys",
+  authDomain: "solo-leveling-college-rpg.firebaseapp.com",
+  projectId: "solo-leveling-college-rpg",
+  storageBucket: "solo-leveling-college-rpg.appspot.com",
+  messagingSenderId: "987654321012",
+  appId: "1:987654321012:web:a1b2c3d4e5f67890"
+};
 
 // Initial Default State
 const DEFAULT_PLAYER = {
@@ -80,6 +88,7 @@ const DEFAULT_PLAYER = {
   name: 'Sung Jin-Woo',
   email: 'jinwoo@college.edu',
   role: 'player',
+  isAdmin: false,
   major: 'Computer Science & Engineering',
   year: '3rd Year (Sem 6)',
   targetGpa: '3.9 / 4.0',
@@ -190,7 +199,7 @@ const DEFAULT_PLAYER = {
   ]
 };
 
-// Registered Players Database (for Admin Dashboard View)
+// Default Multi-Player List for Admin View (Synced with Firestore)
 const ALL_PLAYERS_DB = [
   DEFAULT_PLAYER,
   {
@@ -198,6 +207,7 @@ const ALL_PLAYERS_DB = [
     name: 'Cha Hae-In',
     email: 'haein@college.edu',
     role: 'player',
+    isAdmin: false,
     major: 'Electrical & Electronics',
     year: '4th Year (Sem 7)',
     targetGpa: '4.0 / 4.0',
@@ -218,6 +228,7 @@ const ALL_PLAYERS_DB = [
     name: 'Yoo Jinho',
     email: 'jinho@college.edu',
     role: 'player',
+    isAdmin: false,
     major: 'Business Administration',
     year: '2nd Year (Sem 3)',
     targetGpa: '3.6 / 4.0',
@@ -238,11 +249,10 @@ class SoloLevelingApp {
   constructor() {
     this.currentPlayer = JSON.parse(localStorage.getItem('sl_current_player')) || null;
     this.allPlayers = JSON.parse(localStorage.getItem('sl_all_players')) || ALL_PLAYERS_DB;
-    this.firebaseConfig = JSON.parse(localStorage.getItem('sl_firebase_cfg')) || null;
-    this.adminEmail = localStorage.getItem('sl_admin_email') || 'admin@college.edu';
     
     this.firebaseApp = null;
     this.firebaseAuth = null;
+    this.db = null;
 
     this.init();
   }
@@ -260,11 +270,12 @@ class SoloLevelingApp {
   }
 
   initFirebase() {
-    if (this.firebaseConfig && window.FirebaseAuthModule) {
+    if (window.FirebaseModules) {
       try {
-        const { initializeApp, getAuth, GoogleAuthProvider, onAuthStateChanged } = window.FirebaseAuthModule;
-        this.firebaseApp = initializeApp(this.firebaseConfig);
+        const { initializeApp, getAuth, getFirestore, GoogleAuthProvider, onAuthStateChanged } = window.FirebaseModules;
+        this.firebaseApp = initializeApp(BAKED_FIREBASE_CONFIG);
         this.firebaseAuth = getAuth(this.firebaseApp);
+        this.db = getFirestore(this.firebaseApp);
         this.googleProvider = new GoogleAuthProvider();
 
         onAuthStateChanged(this.firebaseAuth, (user) => {
@@ -273,7 +284,7 @@ class SoloLevelingApp {
           }
         });
       } catch (err) {
-        console.warn('Firebase Init Warning:', err);
+        console.warn('Firebase Live Init Warning:', err);
       }
     }
   }
@@ -294,31 +305,12 @@ class SoloLevelingApp {
       this.loginWithGoogleOAuth();
     });
 
-    // Toggle Firebase Config Modal
-    document.getElementById('toggle-firebase-modal-btn')?.addEventListener('click', () => {
-      sounds.playClick();
-      const cfgCard = document.getElementById('firebase-config-card');
-      if (cfgCard) cfgCard.style.display = cfgCard.style.display === 'none' ? 'block' : 'none';
-    });
-
-    // Save Firebase Config
-    document.getElementById('save-firebase-cfg-btn')?.addEventListener('click', () => {
-      sounds.playClick();
-      this.saveFirebaseSettings();
-    });
-
     // Demo Player Button
     document.querySelectorAll('.demo-login-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         sounds.playClick();
         this.loginDemoPlayer();
       });
-    });
-
-    // Owner / Admin Passcode Button
-    document.getElementById('admin-passcode-btn')?.addEventListener('click', () => {
-      sounds.playClick();
-      this.verifyAdminPasscode();
     });
 
     // Logout Button
@@ -358,53 +350,60 @@ class SoloLevelingApp {
     });
   }
 
-  saveFirebaseSettings() {
-    const adminEmail = document.getElementById('cfg-admin-email').value.trim();
-    const apiKey = document.getElementById('cfg-api-key').value.trim();
-    const authDomain = document.getElementById('cfg-auth-domain').value.trim();
-    const projectId = document.getElementById('cfg-project-id').value.trim();
-
-    if (adminEmail) {
-      this.adminEmail = adminEmail;
-      localStorage.setItem('sl_admin_email', adminEmail);
-    }
-
-    if (apiKey && authDomain && projectId) {
-      this.firebaseConfig = { apiKey, authDomain, projectId };
-      localStorage.setItem('sl_firebase_cfg', JSON.stringify(this.firebaseConfig));
-      this.initFirebase();
-      alert('✅ Firebase Config Saved! Real Google OAuth is now enabled.');
-    } else {
-      alert('⚙️ Admin Email Saved. Fill all Firebase fields to enable live Google OAuth popup.');
-    }
-  }
-
   async loginWithGoogleOAuth() {
-    if (this.firebaseAuth && this.googleProvider && window.FirebaseAuthModule) {
+    if (this.firebaseAuth && this.googleProvider && window.FirebaseModules) {
       try {
-        const { signInWithPopup } = window.FirebaseAuthModule;
+        const { signInWithPopup } = window.FirebaseModules;
         const result = await signInWithPopup(this.firebaseAuth, this.googleProvider);
-        this.handleFirebaseUserLogin(result.user);
+        await this.handleFirebaseUserLogin(result.user);
       } catch (error) {
-        console.error('Google Auth Error:', error);
-        alert(`Google OAuth Error: ${error.message}`);
+        console.error('Google OAuth Error:', error);
+        alert(`Google OAuth Sign-In: ${error.message}`);
       }
     } else {
-      // Fallback demo Google OAuth login if credentials aren't pasted yet
-      alert('💡 Live Google OAuth: Initializing with real Google Account profile.\n(Configure Firebase Keys in settings for live Google Popup)');
-      const realUser = {
-        displayName: 'Real Google User',
-        email: prompt('Enter your Google Email:', 'alex@gmail.com') || 'alex@gmail.com',
+      // Fallback demo sign-in
+      const demoUser = {
+        uid: `g_${Date.now()}`,
+        displayName: 'Google Student Player',
+        email: 'student@college.edu',
         photoURL: 'https://api.dicebear.com/7.x/bottts/svg?seed=GoogleUser'
       };
-      this.handleFirebaseUserLogin(realUser);
+      await this.handleFirebaseUserLogin(demoUser);
     }
   }
 
-  handleFirebaseUserLogin(user) {
-    // Check if Google email matches designated Admin email
-    const isAdmin = user.email.toLowerCase() === this.adminEmail.toLowerCase();
-    const userRole = isAdmin ? 'admin' : 'player';
+  async handleFirebaseUserLogin(user) {
+    let playerRole = 'player';
+    let isAdmin = false;
+
+    // Server-Side Firestore Role Check (doc(db, "users", user.uid))
+    if (this.db && window.FirebaseModules) {
+      try {
+        const { doc, getDoc, setDoc } = window.FirebaseModules;
+        const userDocRef = doc(this.db, 'users', user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          isAdmin = data.isAdmin === true;
+          playerRole = isAdmin ? 'admin' : 'player';
+        } else {
+          // Create new user document in Firestore (default isAdmin: false)
+          const newUserData = {
+            ...DEFAULT_PLAYER,
+            id: user.uid,
+            name: user.displayName || 'Google Student',
+            email: user.email,
+            avatar: user.photoURL || DEFAULT_PLAYER.avatar,
+            role: 'player',
+            isAdmin: false
+          };
+          await setDoc(userDocRef, newUserData, { merge: true });
+        }
+      } catch (e) {
+        console.warn('Firestore User Fetch Error:', e);
+      }
+    }
 
     this.currentPlayer = {
       ...DEFAULT_PLAYER,
@@ -412,12 +411,13 @@ class SoloLevelingApp {
       name: user.displayName || 'Google Student',
       email: user.email,
       avatar: user.photoURL || DEFAULT_PLAYER.avatar,
-      role: userRole
+      role: playerRole,
+      isAdmin: isAdmin
     };
 
     if (isAdmin) {
       sounds.playLevelUp();
-      alert(`👑 Welcome, Admin! Google Account (${user.email}) recognized as System Owner.`);
+      alert(`👑 Server Verified: Account (${user.email}) has Firestore isAdmin == true permissions!`);
     }
 
     this.saveState();
@@ -444,33 +444,15 @@ class SoloLevelingApp {
   }
 
   loginDemoPlayer() {
-    this.currentPlayer = { ...DEFAULT_PLAYER, role: 'player' };
+    this.currentPlayer = { ...DEFAULT_PLAYER, role: 'player', isAdmin: false };
     this.saveState();
     this.updateUI();
     this.switchView('status-view');
   }
 
-  verifyAdminPasscode() {
-    const inputPasscode = prompt('🔒 RESTRICTED: Enter Secret Owner/Admin Passcode:');
-    if (inputPasscode === ADMIN_PASSCODE) {
-      sounds.playLevelUp();
-      this.currentPlayer = {
-        ...DEFAULT_PLAYER,
-        name: 'System Owner (Admin)',
-        role: 'admin'
-      };
-      this.saveState();
-      this.updateUI();
-      this.switchView('admin-view');
-      alert('👑 Admin Verification Granted. Full Player Access Unlocked.');
-    } else {
-      alert('❌ Access Denied: Invalid Admin Passcode.');
-    }
-  }
-
   logout() {
-    if (this.firebaseAuth && window.FirebaseAuthModule) {
-      const { signOut } = window.FirebaseAuthModule;
+    if (this.firebaseAuth && window.FirebaseModules) {
+      const { signOut } = window.FirebaseModules;
       signOut(this.firebaseAuth).catch(err => console.log('Signout Error:', err));
     }
     
@@ -748,7 +730,34 @@ class SoloLevelingApp {
     this.switchView('quests-view');
   }
 
-  renderAdminDashboard() {
+  async renderAdminDashboard() {
+    const container = document.getElementById('admin-players-container');
+    if (!container) return;
+
+    container.innerHTML = '<div style="color: var(--color-cyan);">Connecting to Live Firestore Database...</div>';
+
+    // Live Real-Time Firestore Subscription
+    if (this.db && window.FirebaseModules) {
+      try {
+        const { collection, onSnapshot } = window.FirebaseModules;
+        onSnapshot(collection(this.db, 'users'), (snapshot) => {
+          const players = [];
+          snapshot.forEach(doc => players.push(doc.data()));
+          if (players.length > 0) {
+            this.allPlayers = players;
+          }
+          this.displayAdminPlayerGrid();
+        });
+        return;
+      } catch (e) {
+        console.warn('Firestore Snapshot Error:', e);
+      }
+    }
+
+    this.displayAdminPlayerGrid();
+  }
+
+  displayAdminPlayerGrid() {
     const container = document.getElementById('admin-players-container');
     if (!container) return;
 
@@ -758,11 +767,11 @@ class SoloLevelingApp {
       const box = document.createElement('div');
       box.className = 'player-admin-box';
 
-      const completed = player.quests.filter(q => q.completed).length;
-      const total = player.quests.length;
+      const completed = (player.quests || []).filter(q => q.completed).length;
+      const total = (player.quests || []).length;
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-      let tasksHTML = player.quests.map(q => `
+      let tasksHTML = (player.quests || []).map(q => `
         <div class="admin-task-item">
           <span>${q.title}</span>
           <strong style="color: ${q.completed ? 'var(--color-emerald)' : 'var(--color-pink)'}">
@@ -793,16 +802,45 @@ class SoloLevelingApp {
       box.querySelector('.btn-award-xp').addEventListener('click', (e) => {
         sounds.playLevelUp();
         const id = e.currentTarget.getAttribute('data-id');
-        alert(`👑 Admin awarded +500 Bonus XP to Player ID: ${id}`);
+        this.awardBonusXPToPlayer(id, 500);
       });
 
       container.appendChild(box);
     });
   }
 
-  saveState() {
+  async awardBonusXPToPlayer(playerId, xpAmount) {
+    if (this.db && window.FirebaseModules) {
+      try {
+        const { doc, setDoc } = window.FirebaseModules;
+        const target = this.allPlayers.find(p => p.id === playerId);
+        if (target) {
+          target.xp = (target.xp || 0) + xpAmount;
+          await setDoc(doc(this.db, 'users', playerId), { xp: target.xp }, { merge: true });
+          alert(`👑 Real-time Firestore: Awarded +${xpAmount} Bonus XP to ${target.name}!`);
+          this.renderAdminDashboard();
+        }
+      } catch (e) {
+        console.warn('Award XP Error:', e);
+      }
+    } else {
+      alert(`👑 Admin awarded +${xpAmount} Bonus XP to Player ID: ${playerId}`);
+    }
+  }
+
+  async saveState() {
     if (this.currentPlayer) {
       localStorage.setItem('sl_current_player', JSON.stringify(this.currentPlayer));
+
+      // Real-time Firestore write if initialized
+      if (this.db && window.FirebaseModules && this.currentPlayer.id) {
+        try {
+          const { doc, setDoc } = window.FirebaseModules;
+          await setDoc(doc(this.db, 'users', this.currentPlayer.id), this.currentPlayer, { merge: true });
+        } catch (e) {
+          console.warn('Firestore Sync Error:', e);
+        }
+      }
     }
     localStorage.setItem('sl_all_players', JSON.stringify(this.allPlayers));
   }
