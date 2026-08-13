@@ -1,6 +1,6 @@
 /**
  * Solo Leveling Gamified College Student RPG & Habit System
- * Web Audio RPG Sound Engine, Gemini AI Task Generator, Firebase Cloud Sync & Admin Inspector
+ * Strict Role Enforcement: Google Auth = Player, Passcode = Owner/Admin Only
  */
 
 // Web Audio API Synthesizer for RPG Sound Effects
@@ -38,10 +38,10 @@ class RPGSoundEngine {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(523.25, now); // C5
-    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
-    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
-    osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+    osc.frequency.setValueAtTime(523.25, now);
+    osc.frequency.setValueAtTime(659.25, now + 0.1);
+    osc.frequency.setValueAtTime(783.99, now + 0.2);
+    osc.frequency.setValueAtTime(1046.50, now + 0.3);
     gain.gain.setValueAtTime(0.2, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
     osc.connect(gain);
@@ -72,12 +72,14 @@ class RPGSoundEngine {
 
 const sounds = new RPGSoundEngine();
 
+const ADMIN_PASSCODE = 'admin777'; // Secret Owner Passcode
+
 // Initial Default State
 const DEFAULT_PLAYER = {
   id: 'player_001',
   name: 'Sung Jin-Woo',
   email: 'jinwoo@college.edu',
-  role: 'player', // 'player' or 'admin'
+  role: 'player',
   major: 'Computer Science & Engineering',
   year: '3rd Year (Sem 6)',
   targetGpa: '3.9 / 4.0',
@@ -259,18 +261,24 @@ class SoloLevelingApp {
       });
     });
 
-    // Google Login Simulation / Demo Role Login
+    // Google Login Simulation -> MUST BE PLAYER ONLY
     document.getElementById('google-login-btn')?.addEventListener('click', () => {
       sounds.playClick();
       this.loginWithGoogle();
     });
 
+    // Demo Player Button
     document.querySelectorAll('.demo-login-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         sounds.playClick();
-        const role = e.currentTarget.getAttribute('data-role');
-        this.loginDemoRole(role);
+        this.loginDemoPlayer();
       });
+    });
+
+    // Owner / Admin Passcode Button
+    document.getElementById('admin-passcode-btn')?.addEventListener('click', () => {
+      sounds.playClick();
+      this.verifyAdminPasscode();
     });
 
     // Logout Button
@@ -329,25 +337,41 @@ class SoloLevelingApp {
   }
 
   loginWithGoogle() {
-    this.currentPlayer = { ...DEFAULT_PLAYER, name: 'Student Player (Google Auth)', role: 'player' };
+    // All Google Logins Default STRICTLY to Player Role
+    this.currentPlayer = { 
+      ...DEFAULT_PLAYER, 
+      name: 'Google Auth Student', 
+      email: 'student@college.edu',
+      role: 'player' 
+    };
     this.saveState();
     this.updateUI();
     this.switchView('status-view');
   }
 
-  loginDemoRole(role) {
-    if (role === 'admin') {
-      this.currentPlayer = {
-        ...DEFAULT_PLAYER,
-        name: 'System Admin (You)',
-        role: 'admin'
-      };
-    } else {
-      this.currentPlayer = DEFAULT_PLAYER;
-    }
+  loginDemoPlayer() {
+    this.currentPlayer = { ...DEFAULT_PLAYER, role: 'player' };
     this.saveState();
     this.updateUI();
-    this.switchView(role === 'admin' ? 'admin-view' : 'status-view');
+    this.switchView('status-view');
+  }
+
+  verifyAdminPasscode() {
+    const inputPasscode = prompt('🔒 RESTRICTED: Enter Secret Owner/Admin Passcode:');
+    if (inputPasscode === ADMIN_PASSCODE) {
+      sounds.playLevelUp();
+      this.currentPlayer = {
+        ...DEFAULT_PLAYER,
+        name: 'System Owner (Admin)',
+        role: 'admin'
+      };
+      this.saveState();
+      this.updateUI();
+      this.switchView('admin-view');
+      alert('👑 Admin Verification Granted. Full Player Access Unlocked.');
+    } else {
+      alert('❌ Access Denied: Invalid Admin Passcode.');
+    }
   }
 
   logout() {
@@ -385,7 +409,7 @@ class SoloLevelingApp {
       document.getElementById('hud-user-role').innerText = `[${player.role.toUpperCase()}]`;
     }
 
-    // Top & Mobile Admin Tabs
+    // Top & Mobile Admin Tabs ONLY visible if role === 'admin'
     const adminTabBtn = document.getElementById('admin-tab-btn');
     const mobileAdminItem = document.getElementById('mobile-admin-item');
     if (player.role === 'admin') {
