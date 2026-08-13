@@ -74,12 +74,13 @@ const sounds = new RPGSoundEngine();
 
 // Baked Public-Safe Firebase Credentials
 const BAKED_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC_SoloLevelingCollegeRPGAppConfigKeys",
-  authDomain: "solo-leveling-college-rpg.firebaseapp.com",
-  projectId: "solo-leveling-college-rpg",
-  storageBucket: "solo-leveling-college-rpg.appspot.com",
-  messagingSenderId: "987654321012",
-  appId: "1:987654321012:web:a1b2c3d4e5f67890"
+  apiKey: "AIzaSyAV0uk55OIJdlz3mEBweAvbYGlCrqgMycA",
+  authDomain: "the-system-516fc.firebaseapp.com",
+  projectId: "the-system-516fc",
+  storageBucket: "the-system-516fc.firebasestorage.app",
+  messagingSenderId: "467421624543",
+  appId: "1:467421624543:web:6f0be93483968a1ba0116a",
+  measurementId: "G-WD7R8Q48ZV"
 };
 
 // Initial Default State
