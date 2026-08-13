@@ -234,14 +234,19 @@ const ALL_PLAYERS_DB = [
 
 class SoloLevelingApp {
   constructor() {
-    this.currentPlayer = JSON.parse(localStorage.getItem('sl_current_player')) || DEFAULT_PLAYER;
+    this.currentPlayer = JSON.parse(localStorage.getItem('sl_current_player')) || null;
     this.allPlayers = JSON.parse(localStorage.getItem('sl_all_players')) || ALL_PLAYERS_DB;
     this.init();
   }
 
   init() {
     this.bindEvents();
-    this.updateUI();
+    if (this.currentPlayer) {
+      this.updateUI();
+      this.switchView('status-view');
+    } else {
+      this.switchView('auth-view');
+    }
   }
 
   bindEvents() {
@@ -266,6 +271,12 @@ class SoloLevelingApp {
         const role = e.currentTarget.getAttribute('data-role');
         this.loginDemoRole(role);
       });
+    });
+
+    // Logout Button
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+      sounds.playClick();
+      this.logout();
     });
 
     // Stat Point Allocation
@@ -339,6 +350,18 @@ class SoloLevelingApp {
     this.switchView(role === 'admin' ? 'admin-view' : 'status-view');
   }
 
+  logout() {
+    this.currentPlayer = null;
+    localStorage.removeItem('sl_current_player');
+    
+    // Hide HUD Header & Tabs
+    document.getElementById('user-hud-profile').style.display = 'none';
+    document.getElementById('desktop-nav').style.display = 'none';
+    document.getElementById('streak-shield-banner').style.display = 'none';
+    
+    this.switchView('auth-view');
+  }
+
   calculateRank(level) {
     if (level >= 30) return { letter: 'S', label: 'SHADOW MONARCH' };
     if (level >= 25) return { letter: 'S', label: 'RANK S' };
@@ -350,6 +373,7 @@ class SoloLevelingApp {
   }
 
   updateUI() {
+    if (!this.currentPlayer) return;
     const player = this.currentPlayer;
     
     // Header HUD
@@ -415,9 +439,6 @@ class SoloLevelingApp {
     this.renderQuests();
     this.renderDeadlines();
     this.renderTimetable();
-    
-    // Auth View hide if logged in
-    document.getElementById('auth-view').classList.remove('active');
   }
 
   getIdentityTitle(stats) {
@@ -658,7 +679,9 @@ class SoloLevelingApp {
   }
 
   saveState() {
-    localStorage.setItem('sl_current_player', JSON.stringify(this.currentPlayer));
+    if (this.currentPlayer) {
+      localStorage.setItem('sl_current_player', JSON.stringify(this.currentPlayer));
+    }
     localStorage.setItem('sl_all_players', JSON.stringify(this.allPlayers));
   }
 }
