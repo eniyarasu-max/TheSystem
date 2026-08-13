@@ -1,6 +1,6 @@
 /**
  * Solo Leveling Gamified College Student RPG & Habit System
- * Engine Logic, Google Auth, AI Analyst & Admin Task Inspector
+ * Full Expansion: Deadlines, Weekly Timetable, AI Analyst & Admin Inspector
  */
 
 // Initial Default State
@@ -23,6 +23,57 @@ const DEFAULT_PLAYER = {
     str: 28,
     vita: 38,
     per: 45
+  },
+  deadlines: [
+    {
+      id: 'd1',
+      title: 'Database Management System Project Submission',
+      subject: 'CS304 - DBMS',
+      hoursLeft: 18,
+      urgency: 'critical',
+      xpReward: 350,
+      statReward: 'INT +5'
+    },
+    {
+      id: 'd2',
+      title: 'Operating Systems Midterm Quiz',
+      subject: 'CS302 - OS',
+      hoursLeft: 42,
+      urgency: 'warning',
+      xpReward: 250,
+      statReward: 'PER +4'
+    },
+    {
+      id: 'd3',
+      title: 'Machine Learning Mini-Lab Report',
+      subject: 'CS308 - ML',
+      hoursLeft: 96,
+      urgency: 'normal',
+      xpReward: 200,
+      statReward: 'INT +3'
+    }
+  ],
+  timetable: {
+    Mon: [
+      { time: '09:00 - 10:30', title: 'Data Structures & Algorithms', room: 'Hall 102' },
+      { time: '11:00 - 12:30', title: 'Operating Systems Lab', room: 'Lab 4B' }
+    ],
+    Tue: [
+      { time: '10:00 - 11:30', title: 'Database Systems Lecture', room: 'Hall 201' },
+      { time: '14:00 - 15:30', title: 'Computer Networks', room: 'Hall 105' }
+    ],
+    Wed: [
+      { time: '09:00 - 10:30', title: 'Software Engineering Project', room: 'Lab 2A' },
+      { time: '13:00 - 14:30', title: 'Web Development Workshop', room: 'Lab 1C' }
+    ],
+    Thu: [
+      { time: '11:00 - 12:30', title: 'Machine Learning Fundamentals', room: 'Hall 303' },
+      { time: '15:00 - 16:30', title: 'Algorithm Optimization', room: 'Hall 102' }
+    ],
+    Fri: [
+      { time: '09:30 - 11:00', title: 'Ethics in AI & Computing', room: 'Auditorium' },
+      { time: '14:00 - 16:00', title: 'Weekly Hackathon & Review', room: 'Incubation Hub' }
+    ]
   },
   quests: [
     {
@@ -183,11 +234,14 @@ class SoloLevelingApp {
 
     if (viewId === 'admin-view') {
       this.renderAdminDashboard();
+    } else if (viewId === 'timetable-view') {
+      this.renderTimetable();
+    } else if (viewId === 'deadlines-view') {
+      this.renderDeadlines();
     }
   }
 
   loginWithGoogle() {
-    // Simulating Google OAuth Sign In
     this.currentPlayer = { ...DEFAULT_PLAYER, name: 'Student Player (Google Auth)', role: 'player' };
     this.saveState();
     this.updateUI();
@@ -281,8 +335,10 @@ class SoloLevelingApp {
       if (barEl) barEl.style.width = `${Math.min(100, stats[key] * 1.5)}%`;
     });
 
-    // Quests Render
+    // Render Components
     this.renderQuests();
+    this.renderDeadlines();
+    this.renderTimetable();
     
     // Auth View hide if logged in
     document.getElementById('auth-view').classList.remove('active');
@@ -334,6 +390,60 @@ class SoloLevelingApp {
     });
   }
 
+  renderDeadlines() {
+    const container = document.getElementById('deadlines-list-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    (this.currentPlayer.deadlines || []).forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'glass-panel deadline-card';
+      
+      card.innerHTML = `
+        <div>
+          <span class="urgency-badge urgency-${d.urgency}">${d.hoursLeft} Hours Remaining</span>
+          <div style="font-weight: 700; font-size: 1.05rem; margin: 0.35rem 0;">${d.title}</div>
+          <div style="font-size: 0.8rem; color: var(--color-cyan);">${d.subject}</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="reward-xp">+${d.xpReward} XP</div>
+          <div class="reward-stat">${d.statReward}</div>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  renderTimetable() {
+    const container = document.getElementById('timetable-grid-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const timetable = this.currentPlayer.timetable || {};
+    Object.keys(timetable).forEach(day => {
+      const col = document.createElement('div');
+      col.className = 'day-column';
+
+      let slotsHTML = timetable[day].map(s => `
+        <div class="slot-card">
+          <div class="slot-time">${s.time}</div>
+          <div class="slot-title">${s.title}</div>
+          <div style="font-size: 0.7rem; color: var(--text-dim);">${s.room}</div>
+        </div>
+      `).join('');
+
+      col.innerHTML = `
+        <div class="day-header">${day.toUpperCase()}</div>
+        <div>${slotsHTML}</div>
+      `;
+
+      container.appendChild(col);
+    });
+  }
+
   toggleQuestCompletion(questId) {
     const quest = this.currentPlayer.quests.find(q => q.id === questId);
     if (!quest) return;
@@ -341,14 +451,12 @@ class SoloLevelingApp {
     quest.completed = !quest.completed;
 
     if (quest.completed) {
-      // Award XP & Stat
       this.currentPlayer.xp += quest.xpReward;
       if (quest.statKey && this.currentPlayer.stats[quest.statKey] !== undefined) {
         this.currentPlayer.stats[quest.statKey] += 2;
       }
       this.checkLevelUp();
     } else {
-      // Revert XP
       this.currentPlayer.xp = Math.max(0, this.currentPlayer.xp - quest.xpReward);
     }
 
@@ -378,7 +486,6 @@ class SoloLevelingApp {
 
   generateAIQuests() {
     const branch = document.getElementById('ai-branch').value || 'Computer Science';
-    const focus = document.getElementById('ai-focus').value;
 
     const generatedQuests = [
       {

@@ -32,8 +32,14 @@
       <button class="tab-btn" data-view="quests-view">
         <span>📜</span> Daily Quests
       </button>
+      <button class="tab-btn" data-view="deadlines-view">
+        <span>⏳</span> Deadlines
+      </button>
+      <button class="tab-btn" data-view="timetable-view">
+        <span>📅</span> Timetable
+      </button>
       <button class="tab-btn" data-view="ai-generator-view">
-        <span>🤖</span> AI Task Analyst
+        <span>🤖</span> AI Analyst
       </button>
       <button class="tab-btn" id="admin-tab-btn" data-view="admin-view" style="display: none;">
         <span>👑</span> Admin Inspector
@@ -249,7 +255,33 @@
       </div>
     </section>
 
-    <!-- VIEW 4: AI TASK ANALYST VIEW -->
+    <!-- NEW VIEW: ASSIGNMENT DEADLINES -->
+    <section id="deadlines-view" class="view-section">
+      <div class="quests-header">
+        <div>
+          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">⏳ Academic Assignment Deadlines</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Urgent college project & exam countdown timers.</p>
+        </div>
+      </div>
+      <div id="deadlines-list-container">
+        <!-- Deadline Items populated by JS -->
+      </div>
+    </section>
+
+    <!-- NEW VIEW: CLASS TIMETABLE -->
+    <section id="timetable-view" class="view-section">
+      <div class="quests-header">
+        <div>
+          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">📅 Weekly College Timetable</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Weekly lecture schedule & lab slots.</p>
+        </div>
+      </div>
+      <div class="timetable-grid" id="timetable-grid-container">
+        <!-- Timetable Days populated by JS -->
+      </div>
+    </section>
+
+    <!-- VIEW: AI TASK ANALYST VIEW -->
     <section id="ai-generator-view" class="view-section">
       <div class="glass-panel ai-card" style="max-width: 650px; margin: 0 auto;">
         <h2 style="font-family: var(--font-heading); font-size: 1.3rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
@@ -292,7 +324,7 @@
       </div>
     </section>
 
-    <!-- VIEW 5: ADMIN DASHBOARD VIEW -->
+    <!-- VIEW: ADMIN DASHBOARD VIEW -->
     <section id="admin-view" class="view-section">
       <div class="glass-panel admin-card">
         <div class="admin-header">
@@ -323,6 +355,14 @@
     <a class="mobile-nav-item" data-view="quests-view">
       <span class="mobile-nav-icon">📜</span>
       <span>Quests</span>
+    </a>
+    <a class="mobile-nav-item" data-view="deadlines-view">
+      <span class="mobile-nav-icon">⏳</span>
+      <span>Deadlines</span>
+    </a>
+    <a class="mobile-nav-item" data-view="timetable-view">
+      <span class="mobile-nav-icon">📅</span>
+      <span>Timetable</span>
     </a>
     <a class="mobile-nav-item" data-view="ai-generator-view">
       <span class="mobile-nav-icon">🤖</span>
