@@ -1,0 +1,20 @@
+{
+  "name": "solo-leveling-college-rpg",
+  "version": "1.0.0",
+  "description": "Solo Leveling Gamified College Student RPG & Habit System",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx -y serve . -p 3000",
+    "start": "npx -y serve . -p 3000"
+  },
+  "keywords": [
+    "solo-leveling",
+    "rpg",
+    "habit-tracker",
+    "glassmorphism",
+    "atomic-habits",
+    "college-student"
+  ],
+  "author": "Antigravity AI",
+  "license": "MIT"
+}
