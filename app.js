@@ -1103,59 +1103,187 @@ Return ONLY a raw JSON array (no markdown) with objects:
     container.innerHTML = '';
 
     if (this.allPlayers.length === 0) {
-      container.innerHTML = '<div style="color: var(--text-muted); padding: 1rem;">No players found in Firestore yet.</div>';
+      container.innerHTML = '<div style="color: var(--text-muted); padding: 1rem;">No players found in Firestore yet. Players appear here once they sign in.</div>';
       return;
     }
 
+    const statColors = { int: '#3b82f6', agi: '#06b6d4', str: '#ec4899', vita: '#10b981', per: '#8b5cf6', wth: '#fbbf24', dis: '#f97316' };
+    const statLabels = { int: 'INT', agi: 'AGI', str: 'STR', vita: 'VITA', per: 'PER', wth: 'WTH', dis: 'DIS' };
+
     this.allPlayers.forEach(player => {
-      if (player.isAdmin) return; // Don't show admin in own list
+      if (player.isAdmin) return;
+
       const done = (player.quests || []).filter(q => q.completed).length;
       const total = (player.quests || []).length;
       const pct = total > 0 ? Math.round((done / total) * 100) : 0;
       const rank = this.calculateRank(player.level || 1);
+      const xpPct = Math.min(100, Math.round(((player.xp || 0) / (player.xpToNextLevel || 500)) * 100));
+      const stats = player.stats || {};
+      const equipped = player.equipped || {};
+      const equippedIds = Object.values(equipped);
+      const historyLog = (player.historyLog || []).slice(0, 5);
 
       const box = document.createElement('div');
       box.className = 'glass-panel';
-      box.style.cssText = 'padding: 1.25rem; margin-bottom: 1rem;';
+      box.style.cssText = 'padding: 0; margin-bottom: 1.5rem; overflow: hidden;';
 
-      const tasksHTML = (player.quests || []).slice(0, 5).map(q => `
-        <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem;">
-          <span>${q.title?.slice(0, 40)}...</span>
-          <strong style="color: ${q.completed ? 'var(--color-emerald)' : 'var(--color-pink)'}; white-space: nowrap; margin-left: 0.5rem;">${q.completed ? '✓ DONE' : '⏳'}</strong>
+      // ── HEADER BAR ──────────────────────────────
+      const headerColor = rank.color || '#8b5cf6';
+
+      const statsHTML = Object.keys(statLabels).map(key => {
+        const val = stats[key] || 0;
+        const barPct = Math.min(100, val * 1.2);
+        return `
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+            <div style="width: 32px; height: 20px; background: ${statColors[key]}22; border: 1px solid ${statColors[key]}; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: ${statColors[key]};">${statLabels[key]}</div>
+            <div style="flex: 1; height: 7px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden;">
+              <div style="height: 100%; width: ${barPct}%; background: ${statColors[key]}; box-shadow: 0 0 6px ${statColors[key]}; border-radius: 99px;"></div>
+            </div>
+            <span style="font-size: 0.72rem; font-weight: 700; color: ${statColors[key]}; width: 24px; text-align: right;">${val}</span>
+          </div>
+        `;
+      }).join('');
+
+      const allQuestsHTML = (player.quests || []).map(q => `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+          <div style="flex: 1;">
+            <div style="font-size: 0.78rem; font-weight: ${q.completed ? '400' : '600'}; color: ${q.completed ? 'var(--text-dim)' : 'var(--text-main)'}; text-decoration: ${q.completed ? 'line-through' : 'none'}">${q.title || 'Untitled Quest'}</div>
+            <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 0.1rem;">${q.category} • ${q.difficulty || 'E'}-Rank • +${q.xpReward || 0} XP • +${q.goldReward || 0} 🪙</div>
+          </div>
+          <span style="font-size: 0.72rem; font-weight: 700; color: ${q.completed ? 'var(--color-emerald)' : 'var(--color-pink)'}; white-space: nowrap; margin-left: 0.75rem; padding-top: 0.1rem;">${q.completed ? '✓ DONE' : '⏳ PENDING'}</span>
         </div>
       `).join('');
 
+      const equippedHTML = equippedIds.length > 0
+        ? equippedIds.map(id => {
+            const item = SHOP_CATALOGUE.find(i => i.id === id);
+            return item ? `<span style="font-size: 0.72rem; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.35); border-radius: 4px; padding: 0.15rem 0.45rem;">${item.icon} ${item.name}</span>` : '';
+          }).join('')
+        : '<span style="font-size: 0.72rem; color: var(--text-dim);">No gear equipped</span>';
+
+      const historyHTML = historyLog.length > 0
+        ? historyLog.map(e => `
+            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.72rem;">
+              <span style="color: var(--text-muted); flex: 1;">${e.text}</span>
+              <span style="color: var(--text-dim); white-space: nowrap; margin-left: 0.5rem;">${e.timestamp}</span>
+            </div>`).join('')
+        : '<div style="font-size: 0.72rem; color: var(--text-dim);">No history yet</div>';
+
+      const essentials = player.dailyEssential || { pushups: 0, situps: 0, squats: 0, km: 0 };
+
       box.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.65rem;">
-            <img src="${player.avatar || ''}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--color-violet);">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(6,4,18,0.4) 100%); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <img src="${player.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=unknown'}" style="width: 46px; height: 46px; border-radius: 50%; border: 2px solid ${headerColor};">
             <div>
-              <strong style="font-family: var(--font-heading);">${player.name || 'Unknown'}</strong>
-              <div style="font-size: 0.72rem; color: var(--color-cyan);">${player.major || '—'} • LVL ${player.level || 1} (${rank.label})</div>
+              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem;">${player.name || 'Unknown Hunter'}</div>
+              <div style="font-size: 0.75rem; color: ${headerColor}; font-weight: 700;">${rank.label} &nbsp;•&nbsp; LVL ${player.level || 1}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;">${player.email || '—'} &nbsp;|&nbsp; ${player.major || '—'} &nbsp;|&nbsp; ${player.year || '—'}</div>
             </div>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <div style="font-size: 0.75rem; color: var(--color-gold); font-weight: 700;">🪙 ${(player.gold || 0).toLocaleString()}</div>
-            <button class="btn-primary btn-award" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.65rem; background: rgba(139,92,246,0.3);">+500 XP</button>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
+            ${player.penaltyActive ? '<span style="font-size: 0.75rem; font-weight: 800; color: var(--color-rose); background: rgba(244,63,94,0.15); padding: 0.25rem 0.65rem; border-radius: 99px; border: 1px solid var(--color-rose);">⚠️ PENALTY ZONE</span>' : ''}
+            <button class="btn-primary btn-award-xp" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(139,92,246,0.3);">+500 XP</button>
+            <button class="btn-primary btn-award-gold" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.4); color: var(--color-gold);">+500 🪙</button>
+            ${player.penaltyActive ? `<button class="btn-primary btn-clear-penalty" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(244,63,94,0.2); border: 1px solid var(--color-rose);">Clear Penalty</button>` : ''}
+            <button class="btn-primary btn-reset-quests" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.35);">Reset Daily Quests</button>
           </div>
         </div>
-        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-          Quests: <strong>${done} / ${total} (${pct}%)</strong>
-          ${player.penaltyActive ? ' &nbsp; <span style="color: var(--color-rose); font-weight: 700;">⚠️ PENALTY ZONE</span>' : ''}
+
+        <!-- Stats & Details Body -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+
+          <!-- Left: XP, Gold, Stat Sheet -->
+          <div style="padding: 1rem 1.25rem; border-right: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.65rem;">⚡ PROGRESSION</div>
+            <!-- XP Bar -->
+            <div style="font-size: 0.75rem; display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span style="color: var(--text-muted);">XP</span>
+              <span style="color: var(--color-cyan); font-weight: 700;">${player.xp || 0} / ${player.xpToNextLevel || 500}</span>
+            </div>
+            <div style="height: 7px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 0.75rem;">
+              <div style="height: 100%; width: ${xpPct}%; background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 99px;"></div>
+            </div>
+            <!-- Gold & Streak -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.85rem;">
+              <div style="background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 0.45rem 0.65rem;">
+                <div style="font-size: 0.65rem; color: var(--text-dim);">Total Gold</div>
+                <div style="font-weight: 800; color: var(--color-gold);">🪙 ${(player.gold || 0).toLocaleString()}</div>
+              </div>
+              <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 0.45rem 0.65rem;">
+                <div style="font-size: 0.65rem; color: var(--text-dim);">Streak</div>
+                <div style="font-weight: 800; color: var(--color-emerald);">🔥 ${player.streakDays || 0} Days</div>
+              </div>
+            </div>
+            <!-- 7 Stat Bars -->
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">📊 7 STAT ATTRIBUTES</div>
+            ${statsHTML}
+          </div>
+
+          <!-- Right: Quest Status + Daily Essentials -->
+          <div style="padding: 1rem 1.25rem;">
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.65rem;">📜 DAILY QUEST TRACKER</div>
+            <!-- Quest Progress -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem;">
+              <div style="flex: 1; height: 9px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
+                <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #8b5cf6, #10b981); border-radius: 99px;"></div>
+              </div>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-emerald); white-space: nowrap;">${done} / ${total} (${pct}%)</span>
+            </div>
+            <!-- All Quests List -->
+            <div style="max-height: 180px; overflow-y: auto; margin-bottom: 0.85rem;">
+              ${allQuestsHTML || '<div style="font-size: 0.75rem; color: var(--text-dim);">No quests</div>'}
+            </div>
+            <!-- Daily Essentials -->
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.45rem;">⚔️ DAILY ESSENTIALS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+              ${[['Push-ups', essentials.pushups, 100], ['Sit-ups', essentials.situps, 100], ['Squats', essentials.squats, 100], ['Run (km)', essentials.km, 10]].map(([label, val, max]) => `
+                <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 0.4rem 0.5rem;">
+                  <div style="font-size: 0.65rem; color: var(--text-dim);">${label}</div>
+                  <div style="font-size: 0.8rem; font-weight: 700; color: ${val >= max ? 'var(--color-emerald)' : 'var(--color-pink)'}">${val} / ${max} ${val >= max ? '✓' : ''}</div>
+                </div>`).join('')}
+            </div>
+          </div>
         </div>
-        <div>${tasksHTML}</div>
+
+        <!-- Equipped Gear + History Log -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
+          <!-- Equipped Gear -->
+          <div style="padding: 0.85rem 1.25rem; border-right: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">⚔️ EQUIPPED GEAR</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">${equippedHTML}</div>
+          </div>
+          <!-- Recent History Log -->
+          <div style="padding: 0.85rem 1.25rem;">
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">📋 RECENT ACTIVITY LOG</div>
+            <div>${historyHTML}</div>
+          </div>
+        </div>
       `;
 
-      box.querySelector('.btn-award').addEventListener('click', e => {
+      box.querySelector('.btn-award-xp').addEventListener('click', e => {
         sounds.playLevelUp();
-        this.awardXPToPlayer(e.currentTarget.dataset.id, 500);
+        this.adminAwardXP(e.currentTarget.dataset.id, 500);
+      });
+      box.querySelector('.btn-award-gold').addEventListener('click', e => {
+        sounds.playPurchase();
+        this.adminAwardGold(e.currentTarget.dataset.id, 500);
+      });
+      box.querySelector('.btn-reset-quests').addEventListener('click', e => {
+        sounds.playClick();
+        this.adminResetDailyQuests(e.currentTarget.dataset.id);
+      });
+      box.querySelector('.btn-clear-penalty')?.addEventListener('click', e => {
+        sounds.playClick();
+        this.adminClearPenalty(e.currentTarget.dataset.id);
       });
 
       container.appendChild(box);
     });
   }
 
-  async awardXPToPlayer(playerId, amount) {
+  async adminAwardXP(playerId, amount) {
     const target = this.allPlayers.find(p => p.id === playerId);
     if (!target) return;
     target.xp = (target.xp || 0) + amount;
@@ -1164,7 +1292,42 @@ Return ONLY a raw JSON array (no markdown) with objects:
       await setDoc(doc(this.db, 'users', playerId), { xp: target.xp }, { merge: true }).catch(() => {});
     }
     alert(`👑 Awarded +${amount} XP to ${target.name}!`);
-    this._renderAdminGrid();
+  }
+
+  async adminAwardGold(playerId, amount) {
+    const target = this.allPlayers.find(p => p.id === playerId);
+    if (!target) return;
+    target.gold = (target.gold || 0) + amount;
+    if (this.db && window.FirebaseModules) {
+      const { doc, setDoc } = window.FirebaseModules;
+      await setDoc(doc(this.db, 'users', playerId), { gold: target.gold }, { merge: true }).catch(() => {});
+    }
+    alert(`🪙 Awarded +${amount} Gold to ${target.name}!`);
+  }
+
+  async adminClearPenalty(playerId) {
+    const target = this.allPlayers.find(p => p.id === playerId);
+    if (!target) return;
+    if (!confirm(`Clear Penalty Zone for ${target.name}? This will remove their active penalty.`)) return;
+    target.penaltyActive = false;
+    target.penaltyEndsAt = null;
+    if (this.db && window.FirebaseModules) {
+      const { doc, setDoc } = window.FirebaseModules;
+      await setDoc(doc(this.db, 'users', playerId), { penaltyActive: false, penaltyEndsAt: null }, { merge: true }).catch(() => {});
+    }
+    alert(`✅ Penalty Zone cleared for ${target.name}!`);
+  }
+
+  async adminResetDailyQuests(playerId) {
+    const target = this.allPlayers.find(p => p.id === playerId);
+    if (!target) return;
+    if (!confirm(`Reset all daily quests for ${target.name}? This will mark all their quests as incomplete.`)) return;
+    target.quests = (target.quests || []).map(q => ({ ...q, completed: false }));
+    if (this.db && window.FirebaseModules) {
+      const { doc, setDoc } = window.FirebaseModules;
+      await setDoc(doc(this.db, 'users', playerId), { quests: target.quests }, { merge: true }).catch(() => {});
+    }
+    alert(`🔄 Daily quests reset for ${target.name}!`);
   }
 
   // ─────────────────────────────────────────
