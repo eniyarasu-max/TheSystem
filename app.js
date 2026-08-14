@@ -1,6 +1,6 @@
 /**
  * Solo Leveling Gamified College Student RPG & Habit System
- * Direct Firestore Gemini API Key Integration (reads from config/gemini doc in DB)
+ * Direct Firestore Gemini API Key Integration with Offline Fallback & Resilient API Handling
  */
 
 // Web Audio API Synthesizer for RPG Sound Effects
@@ -357,15 +357,26 @@ class SoloLevelingApp {
   }
 
   async fetchGeminiApiKeyFromDB() {
+    // Check localStorage cache first
+    const cachedKey = localStorage.getItem('sl_cached_gemini_key');
+    if (cachedKey) return cachedKey;
+
     if (this.db && window.FirebaseModules) {
       try {
         const { doc, getDoc } = window.FirebaseModules;
-        const configSnap = await getDoc(doc(this.db, 'config', 'gemini'));
-        if (configSnap.exists() && configSnap.data().apiKey) {
-          return configSnap.data().apiKey;
+        
+        // Fast 3-second timeout to prevent offline hanging
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+        const fetchPromise = getDoc(doc(this.db, 'config', 'gemini'));
+
+        const configSnap = await Promise.race([fetchPromise, timeoutPromise]);
+        if (configSnap && configSnap.exists && configSnap.exists() && configSnap.data().apiKey) {
+          const key = configSnap.data().apiKey;
+          localStorage.setItem('sl_cached_gemini_key', key);
+          return key;
         }
       } catch (e) {
-        console.warn('Firestore config/gemini read warning:', e);
+        console.warn('Firestore config/gemini read notice:', e);
       }
     }
     return null;
@@ -401,14 +412,16 @@ class SoloLevelingApp {
       try {
         const { doc, getDoc, setDoc } = window.FirebaseModules;
         const userDocRef = doc(this.db, 'users', user.uid);
-        const userSnap = await getDoc(userDocRef);
+        
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+        const fetchPromise = getDoc(userDocRef);
+        const userSnap = await Promise.race([fetchPromise, timeoutPromise]).catch(() => null);
 
-        if (userSnap.exists()) {
+        if (userSnap && userSnap.exists && userSnap.exists()) {
           existingProfile = userSnap.data();
           isAdmin = existingProfile.isAdmin === true;
           playerRole = isAdmin ? 'admin' : 'player';
         } else {
-          // New user document in Firestore
           const newUserData = {
             ...DEFAULT_PLAYER,
             id: user.uid,
@@ -419,8 +432,8 @@ class SoloLevelingApp {
             isAdmin: false,
             onboarded: false
           };
-          await setDoc(userDocRef, newUserData, { merge: true });
           existingProfile = newUserData;
+          setDoc(userDocRef, newUserData, { merge: true }).catch(e => console.warn('Firestore User Write Warning:', e));
         }
       } catch (e) {
         console.warn('Firestore User Fetch Error:', e);
@@ -752,32 +765,36 @@ Format strictly as JSON array of objects with keys: "title", "category" (one of:
           })
         });
 
-        const data = await res.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawText) {
-          const cleanedJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-          const parsedQuests = JSON.parse(cleanedJson);
-          if (Array.isArray(parsedQuests)) {
-            const formatted = parsedQuests.map((q, idx) => ({
-              ...q,
-              id: `ai_gemini_${Date.now()}_${idx}`,
-              completed: false
-            }));
-            this.currentPlayer.quests = [...formatted, ...this.currentPlayer.quests];
-            this.saveState();
-            this.updateUI();
-            this.switchView('quests-view');
-            sounds.playLevelUp();
-            alert('✨ Gemini AI (from Firestore config/gemini): Generated 3 new dynamic college quests!');
-            return;
+        if (res.ok) {
+          const data = await res.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawText) {
+            const cleanedJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsedQuests = JSON.parse(cleanedJson);
+            if (Array.isArray(parsedQuests)) {
+              const formatted = parsedQuests.map((q, idx) => ({
+                ...q,
+                id: `ai_gemini_${Date.now()}_${idx}`,
+                completed: false
+              }));
+              this.currentPlayer.quests = [...formatted, ...this.currentPlayer.quests];
+              this.saveState();
+              this.updateUI();
+              this.switchView('quests-view');
+              sounds.playLevelUp();
+              alert('✨ Gemini AI (Live from Firestore config/gemini): Generated 3 new dynamic college quests!');
+              return;
+            }
           }
+        } else {
+          console.warn(`Gemini API returned status ${res.status}`);
         }
       } catch (err) {
         console.warn('Gemini API Fetch Error:', err);
       }
     }
 
-    // Default Fallback Quests if key in config/gemini is not set yet
+    // Default Fallback Quests if key in config/gemini is not set yet or offline
     const generatedQuests = [
       {
         id: `ai_${Date.now()}_1`,
@@ -815,6 +832,7 @@ Format strictly as JSON array of objects with keys: "title", "category" (one of:
     this.saveState();
     this.updateUI();
     this.switchView('quests-view');
+    alert('⚡ AI Quests generated! Note: To use live Gemini generative AI, ensure document config/gemini exists in your Firestore database with field apiKey = "YOUR_GEMINI_API_KEY".');
   }
 
   async renderAdminDashboard() {
