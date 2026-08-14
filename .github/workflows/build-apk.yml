@@ -27,6 +27,11 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Prepare Web Assets Folder
+        run: |
+          mkdir -p www
+          cp -r index.html style.css app.js manifest.json sw.js www/ 2>/dev/null || true
+
       - name: Add Android Platform & Sync Capacitor
         run: |
           npx cap add android || true
