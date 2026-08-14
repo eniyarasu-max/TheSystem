@@ -44,6 +44,9 @@
         <img id="hud-user-avatar" class="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=JinWoo" alt="Avatar">
         <span id="hud-user-name">Sung Jin-Woo</span>
         <span id="hud-user-role" style="font-size: 0.65rem; color: var(--color-cyan); font-weight: 700; text-transform: uppercase;">[PLAYER]</span>
+        <button id="notif-toggle-btn" title="Enable reminder notifications" style="background: rgba(139, 92, 246, 0.15); border: 1px solid var(--color-violet); color: #fff; border-radius: var(--radius-full); padding: 0.2rem 0.45rem; font-size: 0.8rem; cursor: pointer; margin-left: 0.5rem;">
+          🔔
+        </button>
         <button id="logout-btn" style="background: rgba(244, 63, 94, 0.2); border: 1px solid var(--color-rose); color: #fff; border-radius: var(--radius-full); padding: 0.2rem 0.5rem; font-size: 0.7rem; cursor: pointer; margin-left: 0.5rem;">
           Sign Out
         </button>
@@ -108,12 +111,82 @@
           </svg>
           Sign In with Google
         </button>
+      </div>
+    </section>
 
-        <div style="margin: 1rem 0; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">- OFFLINE DEMO MODE -</div>
+    <!-- VIEW: ONBOARDING (new players only, before first Status Window) -->
+    <section id="onboarding-view" class="view-section">
+      <div class="glass-panel ai-card" style="max-width: 650px; margin: 2rem auto;">
+        <h2 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.35rem;">
+          📋 Player Registration
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          Tell the System about yourself. This powers your AI-generated daily quests — it's not just about
+          fitness, it covers academics, deep work, and lifestyle too.
+        </p>
 
-        <button class="btn-primary demo-login-btn" data-role="player" style="width: 100%; padding: 0.65rem; background: rgba(139, 92, 246, 0.15); border: 1px solid var(--color-violet); font-size: 0.85rem;">
-          🎮 Enter as Demo Player
-        </button>
+        <form id="onboarding-form">
+          <div class="form-group">
+            <label class="form-label">Display Name</label>
+            <input type="text" id="onboard-name" class="form-input" placeholder="Your name">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label">Major / Branch</label>
+              <input type="text" id="onboard-major" class="form-input" placeholder="e.g. Computer Science" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year / Semester</label>
+              <input type="text" id="onboard-year" class="form-input" placeholder="e.g. 2nd Year (Sem 3)" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label">Target GPA</label>
+              <input type="text" id="onboard-gpa" class="form-input" placeholder="e.g. 3.8 / 4.0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Daily Free Time</label>
+              <select id="onboard-hours" class="form-select">
+                <option value="2h">Light (2 Hours/day)</option>
+                <option value="4h" selected>Moderate (4 Hours/day)</option>
+                <option value="6h">Hardcore (6+ Hours/day)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">What do you want to focus on? (pick all that apply)</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.4rem;">
+              <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+                <input type="checkbox" class="onboard-focus-check" value="academics" checked> Academics
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+                <input type="checkbox" class="onboard-focus-check" value="coding" checked> Coding / Deep Work
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+                <input type="checkbox" class="onboard-focus-check" value="fitness"> Fitness
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+                <input type="checkbox" class="onboard-focus-check" value="lifestyle" checked> Sleep / Lifestyle
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+                <input type="checkbox" class="onboard-focus-check" value="extracurricular"> Extracurricular
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Anything else the AI should know? (optional)</label>
+            <textarea id="onboard-bio" class="form-input" rows="2" placeholder="e.g. finals in 3 weeks, part-time job, early riser..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem;">
+            ⚡ Enter the System
+          </button>
+        </form>
       </div>
     </section>
 
@@ -366,6 +439,20 @@
         <div id="admin-players-container" class="player-list-grid">
           <!-- Rendered by JS from Firestore -->
         </div>
+
+        <div class="glass-panel" style="margin-top: 1.5rem; padding: 1.25rem;">
+          <div class="section-title" style="margin-bottom: 0.75rem;"><span>🤖 AI Analyst Settings</span></div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Set the Gemini API key once here — every player's "Generate AI Quests" button will use it.
+            Get a free key at <span style="color: var(--color-cyan);">aistudio.google.com/apikey</span>.
+            Note: this key is stored in Firestore and used from the browser, so treat it as semi-public —
+            use a key with usage limits, not one tied to sensitive billing.
+          </p>
+          <div style="display: flex; gap: 0.6rem;">
+            <input type="password" id="admin-gemini-key-input" class="form-input" placeholder="Paste Gemini API key">
+            <button id="admin-save-gemini-key-btn" class="btn-primary" style="white-space: nowrap; padding: 0 1.25rem;">Save Key</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -398,6 +485,10 @@
     </a>
   </nav>
 
+  <!-- Capacitor Local Notifications (native Android reminders).
+       No-op / harmless when running in a plain browser tab — app.js checks
+       Capacitor.isNativePlatform() before using it. -->
+  <script src="https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@6/dist/plugin.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
