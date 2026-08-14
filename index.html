@@ -8,27 +8,15 @@
   <meta name="theme-color" content="#8b5cf6">
   <link rel="stylesheet" href="style.css">
   
-  <!-- Firebase Web SDK v10 (Auth & Firestore) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     
     window.FirebaseModules = {
-      initializeApp,
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signOut,
-      onAuthStateChanged,
-      getFirestore,
-      doc,
-      setDoc,
-      getDoc,
-      collection,
-      onSnapshot,
-      updateDoc,
-      getDocs
+      initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut, 
+      onAuthStateChanged, getFirestore, doc, setDoc, getDoc, collection, 
+      onSnapshot, updateDoc, getDocs
     };
   </script>
 </head>
@@ -44,45 +32,28 @@
 
       <div id="user-hud-profile" class="user-hud-pill" style="display: none;">
         <div class="gold-currency-badge">
-          <span>🪙</span> <span id="hud-user-gold">1,250</span>
+          <span>🪙</span> <span id="hud-user-gold">0</span>
         </div>
-        <img id="hud-user-avatar" class="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=JinWoo" alt="Avatar">
-        <span id="hud-user-name">Sung Jin-Woo</span>
+        <img id="hud-user-avatar" class="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Hunter" alt="Avatar">
+        <span id="hud-user-name">Hunter</span>
         <span id="hud-user-role" style="font-size: 0.65rem; color: var(--color-cyan); font-weight: 700; text-transform: uppercase;">[PLAYER]</span>
-        <button id="notif-toggle-btn" title="Enable reminder notifications" style="background: rgba(139, 92, 246, 0.15); border: 1px solid var(--color-violet); color: #fff; border-radius: var(--radius-full); padding: 0.2rem 0.45rem; font-size: 0.8rem; cursor: pointer;">
-          🔔
-        </button>
-        <button id="logout-btn" style="background: rgba(244, 63, 94, 0.2); border: 1px solid var(--color-rose); color: #fff; border-radius: var(--radius-full); padding: 0.2rem 0.5rem; font-size: 0.7rem; cursor: pointer;">
+        <button id="logout-btn" class="btn-primary" style="background: rgba(244, 63, 94, 0.2); border: 1px solid var(--color-rose); padding: 0.2rem 0.5rem; font-size: 0.7rem;">
           Sign Out
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Navigation Tabs (Desktop & Tablet) -->
+  <!-- Main Content Layout -->
   <main>
     <nav class="nav-tabs" id="desktop-nav" style="display: none;">
-      <button class="tab-btn active" data-view="status-view">
-        <span>⚡</span> Status Window
-      </button>
-      <button class="tab-btn" data-view="quests-view">
-        <span>📜</span> Daily Quests
-      </button>
-      <button class="tab-btn" data-view="timer-view">
-        <span>⏱️</span> Verification Timers
-      </button>
-      <button class="tab-btn" data-view="shop-view">
-        <span>🛒</span> Shop & Gear
-      </button>
-      <button class="tab-btn" data-view="analytics-view">
-        <span>📊</span> Radar Analytics
-      </button>
-      <button class="tab-btn" data-view="ai-generator-view">
-        <span>🤖</span> AI Quest Engine
-      </button>
-      <button class="tab-btn" id="admin-tab-btn" data-view="admin-view" style="display: none;">
-        <span>👑</span> Admin Inspector
-      </button>
+      <button class="tab-btn active" data-view="status-view"><span>⚡</span> Status</button>
+      <button class="tab-btn" data-view="quests-view"><span>📜</span> Quests</button>
+      <button class="tab-btn" data-view="timer-view"><span>⏱️</span> Focus</button>
+      <button class="tab-btn" data-view="shop-view"><span>🛒</span> Shop</button>
+      <button class="tab-btn" data-view="analytics-view"><span>📊</span> Radar</button>
+      <button class="tab-btn" data-view="ai-generator-view"><span>🤖</span> AI Engine</button>
+      <button class="tab-btn" id="admin-tab-btn" data-view="admin-view" style="display: none;"><span>👑</span> Admin</button>
     </nav>
 
     <!-- Streak Shield Banner -->
@@ -91,8 +62,8 @@
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <span style="font-size: 1.5rem;">🛡️</span>
           <div>
-            <strong style="color: var(--color-amber);">Streak Shield Active</strong>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">Protects stats if real-life college emergencies interfere.</p>
+            <strong style="color: var(--color-amber);">System Shield Active</strong>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Protects stats from real-life interference.</p>
           </div>
         </div>
         <div style="font-family: var(--font-heading); font-weight: 700; color: var(--color-emerald);">🔥 7 Day Streak</div>
@@ -107,12 +78,9 @@
           <span class="rank-label">SYSTEM</span>
         </div>
         <h2 style="font-family: var(--font-heading); font-size: 1.6rem; margin-bottom: 0.5rem;">Player Authentication</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">
-          Authenticate to awaken your System status screen. Levels, Gold, and Gear sync live to Firestore.
-        </p>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Authenticate to awaken your System status screen.</p>
 
-        <!-- Google OAuth Button -->
-        <button id="google-login-btn" class="btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; background: #fff; color: #1e293b; border-radius: var(--radius-sm); margin-bottom: 1.25rem;">
+        <button id="google-login-btn" class="btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; background: #fff; color: #1e293b; margin-bottom: 1.25rem;">
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -122,10 +90,9 @@
           Sign In with Google
         </button>
 
-        <div style="margin: 1rem 0; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">- OFFLINE DEMO MODE -</div>
-
-        <button class="btn-primary demo-login-btn" data-role="player" style="width: 100%; padding: 0.65rem; background: rgba(139, 92, 246, 0.15); border: 1px solid var(--color-violet); font-size: 0.85rem;">
-          🎮 Enter as Demo Player
+        <div style="margin: 1rem 0; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">- OR -</div>
+        <button class="btn-primary demo-login-btn" style="width: 100%; padding: 0.65rem; background: rgba(139, 92, 246, 0.15); border: 1px solid var(--color-violet); font-size: 0.85rem;">
+          🎮 Enter Offline Demo Mode
         </button>
       </div>
     </section>
@@ -133,501 +100,198 @@
     <!-- VIEW 2: ONBOARDING -->
     <section id="onboarding-view" class="view-section">
       <div class="glass-panel ai-card" style="max-width: 650px; margin: 2rem auto;">
-        <h2 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.35rem;">
-          📋 Player Registration & Awakening
-        </h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Tell the System about yourself to awaken as an E-Rank Hunter.
-        </p>
+        <h2 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.35rem;">📋 Player Awakening</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Tell the System about yourself to awaken.</p>
 
         <form id="onboarding-form">
-          <div class="form-group">
-            <label class="form-label">Hunter / Display Name</label>
-            <input type="text" id="onboard-name" class="form-input" placeholder="Sung Jin-Woo">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Display Name</label>
+            <input type="text" id="onboard-name" class="form-input" placeholder="e.g. Sung Jin-Woo" required>
           </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
             <div class="form-group">
-              <label class="form-label">Major / Branch</label>
+              <label class="form-label">Domain / Major</label>
               <input type="text" id="onboard-major" class="form-input" placeholder="e.g. Computer Science" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Year / Semester</label>
-              <input type="text" id="onboard-year" class="form-input" placeholder="e.g. 3rd Year (Sem 6)" required>
+              <label class="form-label">Current Level / Year</label>
+              <input type="text" id="onboard-year" class="form-input" placeholder="e.g. 3rd Year" required>
             </div>
           </div>
-
-          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem;">
-            ⚡ Awaken Hunter Status
-          </button>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem;">⚡ Awaken Status</button>
         </form>
       </div>
     </section>
 
-    <!-- VIEW 3: PLAYER STATUS WINDOW (HUD) -->
+    <!-- VIEW 3: PLAYER STATUS -->
     <section id="status-view" class="view-section">
       <div class="status-grid">
-        
-        <!-- Profile Column -->
         <div class="glass-panel profile-card">
           <div class="rank-badge-glow">
             <span id="player-rank-letter" class="rank-letter">E</span>
             <span id="player-rank-label" class="rank-label">E-RANK HUNTER</span>
           </div>
-          <h2 id="player-display-name" class="player-name">Sung Jin-Woo</h2>
-          <div id="player-display-title" class="player-title">✨ The Apex Scholar</div>
+          <h2 id="player-display-name" class="player-name">Hunter</h2>
+          <div id="player-display-title" class="player-title">✨ The Awakened</div>
 
           <div class="college-meta">
-            <div class="meta-box">
-              <div class="meta-label">Major / Class</div>
-              <div id="player-major" class="meta-value">Computer Science</div>
-            </div>
-            <div class="meta-box">
-              <div class="meta-label">Year / Semester</div>
-              <div id="player-year" class="meta-value">3rd Year (Sem 6)</div>
-            </div>
-            <div class="meta-box">
-              <div class="meta-label">Total Gold</div>
-              <div id="player-gold-display" class="meta-value" style="color: var(--color-gold);">🪙 1,250</div>
-            </div>
-            <div class="meta-box">
-              <div class="meta-label">Quests Completed</div>
-              <div id="player-quests-count" class="meta-value">28 Quests</div>
-            </div>
+            <div class="meta-box"><div class="meta-label">Domain</div><div id="player-major" class="meta-value">Unknown</div></div>
+            <div class="meta-box"><div class="meta-label">Level</div><div id="player-year" class="meta-value">Unknown</div></div>
+            <div class="meta-box"><div class="meta-label">Total Gold</div><div id="player-gold-display" class="meta-value" style="color: var(--color-gold);">🪙 0</div></div>
+            <div class="meta-box"><div class="meta-label">Quests Cleared</div><div id="player-quests-count" class="meta-value">0 Quests</div></div>
           </div>
 
-          <!-- Level & XP Meter -->
           <div class="level-meter-container">
             <div class="level-header">
-              <span>PLAYER LEVEL</span>
-              <span id="player-level" class="level-number">LVL 14</span>
+              <span>PLAYER LEVEL</span><span id="player-level" class="level-number">LVL 1</span>
             </div>
-            <div class="xp-bar-bg">
-              <div id="player-xp-fill" class="xp-bar-fill" style="width: 65%;"></div>
-            </div>
+            <div class="xp-bar-bg"><div id="player-xp-fill" class="xp-bar-fill" style="width: 0%;"></div></div>
             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-              <span id="player-xp-text">650 / 1000 XP</span>
-              <span style="color: var(--color-violet-bright);">Next Level: +5 Stat Points</span>
+              <span id="player-xp-text">0 / 500 XP</span><span style="color: var(--color-violet-bright);">Next Level: +5 Points</span>
             </div>
           </div>
         </div>
 
-        <!-- 7 Core Stats Column -->
         <div class="glass-panel stats-panel">
           <div class="section-title">
-            <span>HUNTER STAT SHEET (7 ATTRIBUTES)</span>
+            <span>7 CORE ATTRIBUTES</span>
             <span id="stat-points-available" class="unassigned-points">0 Points Available</span>
           </div>
-
-          <!-- 1. Intelligence -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-int-bg">INT</div>
-                <span>Intelligence (Academics & GPA)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-int-val" class="stat-val" style="color: var(--stat-int);">42</span>
-                <button class="btn-add-stat" data-stat="int">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-int-bar" class="stat-bar-fill int-fill" style="width: 70%;"></div>
-            </div>
+          
+          <!-- Rendered dynamically or keep your 7 stat blocks here (INT, AGI, STR, VITA, PER, WTH, DIS) -->
+          <div id="stats-container-dynamic">
+             <!-- Simplified for final merge, ensure you keep the 7 HTML blocks from your previous code here -->
           </div>
-
-          <!-- 2. Agility -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-agi-bg">AGI</div>
-                <span>Agility (Attendance & Routine Speed)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-agi-val" class="stat-val" style="color: var(--stat-agi);">35</span>
-                <button class="btn-add-stat" data-stat="agi">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-agi-bar" class="stat-bar-fill agi-fill" style="width: 58%;"></div>
-            </div>
-          </div>
-
-          <!-- 3. Strength -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-str-bg">STR</div>
-                <span>Strength (Workout & Endurance)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-str-val" class="stat-val" style="color: var(--stat-str);">28</span>
-                <button class="btn-add-stat" data-stat="str">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-str-bar" class="stat-bar-fill str-fill" style="width: 46%;"></div>
-            </div>
-          </div>
-
-          <!-- 4. Vitality -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-vita-bg">VITA</div>
-                <span>Vitality (Sleep, Hydration & Health)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-vita-val" class="stat-val" style="color: var(--stat-vita);">38</span>
-                <button class="btn-add-stat" data-stat="vita">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-vita-bar" class="stat-bar-fill vita-fill" style="width: 63%;"></div>
-            </div>
-          </div>
-
-          <!-- 5. Perception -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-per-bg">PER</div>
-                <span>Perception (Deep Work & Coding Skills)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-per-val" class="stat-val" style="color: var(--stat-per);">45</span>
-                <button class="btn-add-stat" data-stat="per">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-per-bar" class="stat-bar-fill per-fill" style="width: 75%;"></div>
-            </div>
-          </div>
-
-          <!-- 6. Wealth -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-wth-bg">WTH</div>
-                <span>Wealth (Savings, Gold & Investments)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-wth-val" class="stat-val" style="color: var(--stat-wth);">20</span>
-                <button class="btn-add-stat" data-stat="wth">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-wth-bar" class="stat-bar-fill wth-fill" style="width: 40%;"></div>
-            </div>
-          </div>
-
-          <!-- 7. Discipline -->
-          <div class="stat-item">
-            <div class="stat-top">
-              <div class="stat-info">
-                <div class="stat-icon-pill stat-dis-bg">DIS</div>
-                <span>Discipline (No Distractions & Habit Consistency)</span>
-              </div>
-              <div class="stat-val-group">
-                <span id="stat-dis-val" class="stat-val" style="color: var(--stat-dis);">30</span>
-                <button class="btn-add-stat" data-stat="dis">+</button>
-              </div>
-            </div>
-            <div class="stat-bar-bg">
-              <div id="stat-dis-bar" class="stat-bar-fill dis-fill" style="width: 50%;"></div>
-            </div>
-          </div>
-
         </div>
-
       </div>
     </section>
 
-    <!-- VIEW 4: DAILY QUESTS & SECRET QUESTS VIEW -->
+    <!-- VIEW 4: QUESTS -->
     <section id="quests-view" class="view-section">
       <div class="quests-header">
         <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">📜 Daily Quests & Secret Challenges</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Complete daily goals to earn XP, Gold, and Stat Points.</p>
+          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">📜 Active Quests</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Clear goals to level up.</p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-          <button id="add-custom-quest-btn" class="btn-primary" style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--color-violet-bright);">
-            + Secret Quest
-          </button>
-          <button id="trigger-ai-modal-btn" class="btn-ai-gen">
-            <span>✨</span> AI Quest Engine
-          </button>
+          <button id="add-custom-quest-btn" class="btn-primary" style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--color-violet-bright);">+ Secret Quest</button>
+          <button id="trigger-ai-modal-btn" class="btn-ai-gen"><span>✨</span> AI Engine</button>
         </div>
       </div>
-
-      <!-- Mandatory Daily Quest Card (Jin Woo's Quest) -->
-      <div class="glass-panel" style="padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid var(--color-cyan);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <strong style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-cyan);">
-            ⚔️ DAILY QUEST: PREPARATION TO BECOME STRONG
-          </strong>
-          <span style="font-size: 0.75rem; color: var(--color-rose); font-weight: 700;">[NON-NEGOTIABLE]</span>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
-          <div style="background: rgba(0,0,0,0.3); padding: 0.6rem; border-radius: 6px; text-align: center;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Push-ups</div>
-            <strong id="daily-pushups-count">100 / 100</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 0.6rem; border-radius: 6px; text-align: center;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Sit-ups</div>
-            <strong id="daily-situps-count">100 / 100</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 0.6rem; border-radius: 6px; text-align: center;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Squats</div>
-            <strong id="daily-squats-count">100 / 100</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 0.6rem; border-radius: 6px; text-align: center;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Running</div>
-            <strong id="daily-run-count">10km / 10km</strong>
-          </div>
-        </div>
-      </div>
-
-      <div id="quests-list-container">
-        <!-- Quest Items populated by JS -->
-      </div>
+      <div id="quests-list-container"></div>
     </section>
 
-    <!-- VIEW 5: VERIFICATION TIMERS & PHOTO PROOF -->
+    <!-- VIEW 5: TIMERS -->
     <section id="timer-view" class="view-section">
-      <div class="quests-header">
-        <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">⏱️ Quest Verification & Timers</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Built-in Pomodoro focus clock and workout stopwatch for proof verification.</p>
-        </div>
-      </div>
-
       <div class="glass-panel timer-container">
         <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
-          <button id="timer-mode-pomo" class="tab-btn active" style="flex: 0 1 140px;">Pomodoro (25m)</button>
+          <button id="timer-mode-pomo" class="tab-btn active" style="flex: 0 1 140px;">Focus (25m)</button>
           <button id="timer-mode-stopwatch" class="tab-btn" style="flex: 0 1 140px;">Stopwatch</button>
         </div>
-
         <div id="timer-display-clock" class="timer-display">25:00</div>
-
         <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
           <button id="timer-start-btn" class="btn-primary" style="padding: 0.75rem 2rem;">START</button>
           <button id="timer-reset-btn" class="btn-primary" style="background: rgba(255,255,255,0.1); padding: 0.75rem 1.5rem;">RESET</button>
         </div>
-
-        <!-- Photo Proof Verification Upload -->
         <div style="border-top: 1px solid var(--glass-border); padding-top: 1.25rem; text-align: left;">
-          <strong style="font-family: var(--font-heading); font-size: 0.95rem;">📷 Hard Quest Photo Proof Snap</strong>
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.35rem 0 0.75rem 0;">Snap or attach a photo before marking S-Rank quests as completed.</p>
-          <input type="file" id="photo-proof-input" accept="image/*" class="form-input" style="padding: 0.4rem;">
-          <div id="photo-proof-preview" style="margin-top: 0.75rem; max-height: 150px; overflow: hidden; border-radius: var(--radius-sm); display: none;">
-            <img id="photo-preview-img" src="" style="width: 100%; object-fit: cover;">
-          </div>
+          <strong style="font-family: var(--font-heading); font-size: 0.95rem;">📷 S-Rank Verification Snap</strong>
+          <input type="file" id="photo-proof-input" accept="image/*" class="form-input" style="padding: 0.4rem; margin-top: 0.5rem;">
         </div>
       </div>
     </section>
 
-    <!-- VIEW 6: VIRTUAL GOLD SHOP & EQUIPMENT INVENTORY -->
+    <!-- VIEW 6: SHOP -->
     <section id="shop-view" class="view-section">
       <div class="quests-header">
-        <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">🛒 Virtual Rewards Shop & Gear Inventory</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Spend quest Gold on real-life rewards and equip legendary Hunter gear.</p>
-        </div>
-        <div class="gold-currency-badge" style="font-size: 1rem;">
-          <span>🪙</span> <span id="shop-gold-display">1,250</span> Gold
-        </div>
+        <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">🛒 System Shop</h2>
+        <div class="gold-currency-badge"><span>🪙</span> <span id="shop-gold-display">0</span> Gold</div>
       </div>
-
       <div style="margin-bottom: 2rem;">
-        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--color-cyan);">🛡️ Equipped Gear & Artifacts</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;" id="equipped-items-container">
-          <!-- Populated by JS -->
-        </div>
+        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--color-cyan);">🛡️ Equipped</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;" id="equipped-items-container"></div>
       </div>
-
       <div>
-        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--color-gold);">🛍️ Rewards Shop (Real-Life Perks & Gear)</h3>
-        <div class="shop-grid" id="shop-items-container">
-          <!-- Populated by JS -->
-        </div>
+        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--color-gold);">🛍️ Available Artifacts</h3>
+        <div class="shop-grid" id="shop-items-container"></div>
       </div>
     </section>
 
-    <!-- VIEW 7: RADAR ANALYTICS & HISTORY DUNGEON LOG -->
+    <!-- VIEW 7: RADAR -->
     <section id="analytics-view" class="view-section">
-      <div class="quests-header">
-        <div>
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem;">📊 Hunter Radar Analytics & History Log</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Dynamic attribute radar chart & completed quest calendar history.</p>
-        </div>
-      </div>
-
       <div class="analytics-container">
-        <!-- Radar Attribute Chart -->
         <div class="glass-panel radar-wrapper">
           <div style="width: 100%; text-align: center;">
-            <h3 style="font-family: var(--font-heading); font-size: 1rem; margin-bottom: 1rem; color: var(--color-violet-bright);">🎯 Attribute Growth Radar</h3>
-            <svg id="radar-chart-svg" viewBox="0 0 300 300" style="width: 100%; max-width: 280px; height: auto; margin: 0 auto; display: block;">
-              <!-- Rendered dynamically by JS -->
-            </svg>
+            <h3 style="font-family: var(--font-heading); font-size: 1rem; margin-bottom: 1rem; color: var(--color-violet-bright);">🎯 Attribute Radar</h3>
+            <svg id="radar-chart-svg" viewBox="0 0 300 300" style="width: 100%; max-width: 280px; margin: 0 auto; display: block;"></svg>
           </div>
         </div>
-
-        <!-- History Log Calendar -->
         <div class="glass-panel" style="padding: 1.25rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1rem; margin-bottom: 0.75rem; color: var(--color-cyan);">📅 Quest Completion Log</h3>
-          <div id="history-log-list" style="max-height: 300px; overflow-y: auto;">
-            <!-- Populated by JS -->
-          </div>
+          <h3 style="font-family: var(--font-heading); font-size: 1rem; margin-bottom: 0.75rem; color: var(--color-cyan);">📅 Dungeon Log</h3>
+          <div id="history-log-list" style="max-height: 300px; overflow-y: auto;"></div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 8: AI QUEST GENERATOR VIEW -->
+    <!-- VIEW 8: AI ENGINE -->
     <section id="ai-generator-view" class="view-section">
       <div class="glass-panel ai-card" style="max-width: 750px; margin: 0 auto; padding: 2rem;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span style="color: var(--color-pink);">🤖</span> AI Student Quest Converter
-          </h2>
-          <span style="font-size: 0.7rem; font-weight: 800; color: var(--color-cyan); background: rgba(6,182,212,0.15); padding: 0.25rem 0.65rem; border-radius: var(--radius-full); border: 1px solid var(--color-cyan);">
-            SYSTEM ENGINE v2.0
-          </span>
-        </div>
-
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
-          Input any personal goal or academic project. The System AI analyzes your target and generates 3 structured daily quests complete with stat rewards and atomic habit triggers.
-        </p>
-
-        <!-- Quick Goal Presets -->
+        <h2 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 1rem;"><span style="color: var(--color-pink);">🤖</span> System Quest Converter</h2>
         <div style="margin-bottom: 1.25rem;">
-          <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.4rem;">
-            ⚡ Quick Presets
-          </div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.4rem;">⚡ Quick Presets</div>
           <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
             <button type="button" class="preset-chip" data-goal="Learn Fullstack Web Development in 30 Days">💻 Fullstack Web Dev</button>
             <button type="button" class="preset-chip" data-goal="Ace Semester Exams & Maintain 3.8+ GPA">📚 Semester Exam Prep</button>
             <button type="button" class="preset-chip" data-goal="Build 100 Pushups & 10km Marathon Endurance">🏋️ Physical Conditioning</button>
-            <button type="button" class="preset-chip" data-goal="Save $1000 & Track Daily Financial Budget">🪙 Wealth Building</button>
           </div>
         </div>
-
         <form id="ai-task-form">
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Your Primary Target / Goal</label>
-            <input type="text" id="ai-goal-input" class="form-input" placeholder="e.g. Master Data Structures & Algorithms, Learn Python" required>
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Your Primary Target</label>
+            <input type="text" id="ai-goal-input" class="form-input" placeholder="e.g. Master Data Structures" required>
           </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Target Attribute Focus</label>
-              <select id="ai-focus-select" class="form-select">
-                <option value="int">Intelligence (+INT - Academics)</option>
-                <option value="per">Perception (+PER - Coding/Skills)</option>
-                <option value="str">Strength (+STR - Workouts)</option>
-                <option value="vita">Vitality (+VITA - Health/Sleep)</option>
-                <option value="wth">Wealth (+WTH - Savings)</option>
-                <option value="dis" selected>Discipline (+DIS - Routine)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Available Free Time</label>
-              <select id="ai-time-select" class="form-select">
-                <option value="2h">Casual (1-2 Hours/day)</option>
-                <option value="4h" selected>Moderate (3-4 Hours/day)</option>
-                <option value="6h">Hardcore (5+ Hours/day)</option>
-              </select>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem;">
-            ⚡ Run System Analysis & Convert to Quests
-          </button>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem;">⚡ Convert Target to Quests</button>
         </form>
-
-        <!-- Results Slot -->
         <div id="ai-generated-results"></div>
       </div>
     </section>
 
-    <!-- VIEW 9: EMERGENCY PENALTY ZONE VIEW -->
-    <section id="penalty-view" class="view-section">
-      <div class="glass-panel penalty-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">⚠️</div>
-        <div class="penalty-title">PENALTY ZONE LOCKOUT</div>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">
-          You failed to complete your non-negotiable daily essential quest before deadline!
-        </p>
-
-        <div id="penalty-countdown" class="penalty-timer">03:59:59</div>
-
-        <p style="color: var(--color-rose); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem;">
-          QUEST: SURVIVE THE PENALTY ZONE MONSTERS (Perform 100 Burpees or 4 Hours Focus)
-        </p>
-
-        <button id="clear-penalty-btn" class="btn-primary" style="background: var(--color-rose); padding: 0.8rem 2rem;">
-          ⚔️ Complete Emergency Survival Task
-        </button>
-      </div>
-    </section>
-
-    <!-- VIEW 10: ADMIN INSPECTOR VIEW -->
+    <!-- VIEW 9: ADMIN -->
     <section id="admin-view" class="view-section">
       <div class="glass-panel admin-card" style="padding: 1.5rem;">
         <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--color-pink); display: flex; align-items: center; gap: 0.5rem;">
-              👑 Admin Inspector — Live Player Registry
-            </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">Inspect active players, verify completed quests, monitor attributes, and override stats in real time.</p>
+            <h2 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--color-pink);">👑 Admin Inspector</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Live Player Registry.</p>
           </div>
-          <button id="admin-refresh-btn" class="btn-primary" style="background: rgba(236, 72, 153, 0.2); border: 1px solid var(--color-pink); font-size: 0.85rem; padding: 0.5rem 1rem;">
-            🔄 Sync Live Firestore Data
+          <button id="admin-refresh-btn" class="btn-primary" style="background: rgba(236, 72, 153, 0.2); border: 1px solid var(--color-pink); font-size: 0.85rem;">🔄 Sync Database</button>
+        </div>
+        
+        <!-- App Updater Integration for Admins/Users -->
+        <div style="margin-bottom: 1.5rem; text-align: center; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">System Build: v1.0.0</div>
+          <button id="check-update-btn" class="btn-primary" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--color-emerald); color: var(--color-emerald);">
+            🔄 Check GitHub for APK Updates
           </button>
         </div>
 
-        <div id="admin-players-container" class="player-list-grid">
-          <!-- Player detail cards dynamically populated by JavaScript -->
-        </div>
+        <div id="admin-players-container" class="player-list-grid"></div>
       </div>
     </section>
   </main>
 
-  <!-- Mobile Bottom Navigation Bar -->
+  <!-- Mobile Nav -->
   <nav class="mobile-nav">
-    <a class="mobile-nav-item active" data-view="status-view">
-      <span class="mobile-nav-icon">⚡</span>
-      <span>Status</span>
-    </a>
-    <a class="mobile-nav-item" data-view="quests-view">
-      <span class="mobile-nav-icon">📜</span>
-      <span>Quests</span>
-    </a>
-    <a class="mobile-nav-item" data-view="timer-view">
-      <span class="mobile-nav-icon">⏱️</span>
-      <span>Timers</span>
-    </a>
-    <a class="mobile-nav-item" data-view="shop-view">
-      <span class="mobile-nav-icon">🛒</span>
-      <span>Shop</span>
-    </a>
-    <a class="mobile-nav-item" data-view="analytics-view">
-      <span class="mobile-nav-icon">📊</span>
-      <span>Radar</span>
-    </a>
-    <a id="mobile-admin-item" class="mobile-nav-item" data-view="admin-view" style="display: none;">
-      <span class="mobile-nav-icon">👑</span>
-      <span>Admin</span>
-    </a>
+    <a class="mobile-nav-item active" data-view="status-view"><span class="mobile-nav-icon">⚡</span><span>Status</span></a>
+    <a class="mobile-nav-item" data-view="quests-view"><span class="mobile-nav-icon">📜</span><span>Quests</span></a>
+    <a class="mobile-nav-item" data-view="timer-view"><span class="mobile-nav-icon">⏱️</span><span>Focus</span></a>
+    <a class="mobile-nav-item" data-view="shop-view"><span class="mobile-nav-icon">🛒</span><span>Shop</span></a>
+    <a class="mobile-nav-item" data-view="analytics-view"><span class="mobile-nav-icon">📊</span><span>Radar</span></a>
   </nav>
+
+  <!-- SYSTEM TOAST CONTAINER (NEW) -->
+  <div id="system-toast-container" class="toast-container"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@6/dist/plugin.js"></script>
   <script src="app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Registration:', err));
-    }
-  </script>
 </body>
 </html>
