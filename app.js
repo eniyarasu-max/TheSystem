@@ -1,5 +1,5 @@
 /**
- * Solo Leveling — Real-Life RPG System Engine
+ * Solo Leveling — Real-Life RPG System Engine v3.0 (Final Polish)
  * Complete Feature Set:
  * 1. 7-Stat Hunter Sheet + National Level Ranks
  * 2. Quest Engine (Daily, Secret, Custom) + Gold Rewards
@@ -9,6 +9,7 @@
  * 6. SVG Radar Analytics + Quest History Log
  * 7. AI Student Quest Converter with Goal Presets
  * 8. Admin Inspector Panel (360° Player Details)
+ * 9. System Toast Notifications & In-App GitHub APK Updater
  */
 
 // ═══════════════════════════════════════════
@@ -65,13 +66,11 @@ const BAKED_FIREBASE_CONFIG = {
 // SHOP CATALOGUE
 // ═══════════════════════════════════════════
 const SHOP_CATALOGUE = [
-  // Real-Life Rewards
   { id: 'reward_games', name: '1 Hour Gaming Session', icon: '🎮', cost: 500, type: 'reward', rarity: 'common', description: 'Earned break — 1 hour of guilt-free gaming.' },
   { id: 'reward_movie', name: 'Movie Night', icon: '🎬', cost: 800, type: 'reward', rarity: 'common', description: 'Watch any movie you want as a reward.' },
   { id: 'reward_food', name: 'Cheat Meal Unlocked', icon: '🍕', cost: 600, type: 'reward', rarity: 'rare', description: 'Order your favourite cheat meal — fully earned.' },
   { id: 'reward_sleep', name: 'Sleep-In Morning', icon: '😴', cost: 1000, type: 'reward', rarity: 'rare', description: 'Wake up 1 hour later tomorrow — sleep bonus.' },
   { id: 'reward_hangout', name: 'Friend Hangout Pass', icon: '👥', cost: 1200, type: 'reward', rarity: 'rare', description: 'Go out guilt-free — your productivity earned this.' },
-  // Equipment
   { id: 'item_dagger', name: "Rasaka's Dagger", icon: '🗡️', cost: 2000, type: 'equipment', rarity: 'epic', statBoost: { per: 8 }, description: '+8 PER — The Architect of Perception.' },
   { id: 'item_ring', name: "Demon King's Ring", icon: '💍', cost: 3500, type: 'equipment', rarity: 'legendary', statBoost: { int: 10, dis: 5 }, description: '+10 INT / +5 DIS — Amplifies cognitive and discipline power.' },
   { id: 'item_armor', name: "Shadow Soldier Armor", icon: '🛡️', cost: 3000, type: 'equipment', rarity: 'legendary', statBoost: { str: 8, vita: 8 }, description: '+8 STR / +8 VITA — Iron body forged by darkness.' },
@@ -158,7 +157,7 @@ class SoloLevelingApp {
 
     // Timer engine state
     this.timerInterval = null;
-    this.timerMode = 'pomo'; // 'pomo' | 'stopwatch'
+    this.timerMode = 'pomo';
     this.timerRunning = false;
     this.timerSeconds = 25 * 60;
     this.stopwatchSeconds = 0;
@@ -169,9 +168,6 @@ class SoloLevelingApp {
     this.init();
   }
 
-  // ─────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────
   init() {
     this.initFirebase();
     this.bindEvents();
@@ -203,11 +199,7 @@ class SoloLevelingApp {
     }
   }
 
-  // ─────────────────────────────────────────
-  // EVENT BINDING
-  // ─────────────────────────────────────────
   bindEvents() {
-    // Navigation
     document.querySelectorAll('.tab-btn[data-view], .mobile-nav-item[data-view]').forEach(btn => {
       btn.addEventListener('click', e => {
         sounds.playClick();
@@ -215,42 +207,31 @@ class SoloLevelingApp {
       });
     });
 
-    // Auth
     document.getElementById('google-login-btn')?.addEventListener('click', () => { sounds.playClick(); this.loginGoogle(); });
     document.querySelectorAll('.demo-login-btn').forEach(btn => btn.addEventListener('click', () => { sounds.playClick(); this.loginDemo(); }));
     document.getElementById('logout-btn')?.addEventListener('click', () => { sounds.playClick(); this.logout(); });
     document.getElementById('onboarding-form')?.addEventListener('submit', e => { e.preventDefault(); this.completeOnboarding(); });
 
-    // Stats
     document.querySelectorAll('.btn-add-stat').forEach(btn => {
       btn.addEventListener('click', e => { sounds.playClick(); this.addStatPoint(e.currentTarget.dataset.stat); });
     });
 
-    // Quests
     document.getElementById('add-custom-quest-btn')?.addEventListener('click', () => { sounds.playClick(); this.promptAddCustomQuest(); });
     document.getElementById('trigger-ai-modal-btn')?.addEventListener('click', () => { sounds.playClick(); this.switchView('ai-generator-view'); });
-
-    // AI Form
     document.getElementById('ai-task-form')?.addEventListener('submit', e => { e.preventDefault(); sounds.playClick(); this.generateAIQuests(); });
 
-    // Timer
     document.getElementById('timer-start-btn')?.addEventListener('click', () => { sounds.playClick(); this.toggleTimer(); });
     document.getElementById('timer-reset-btn')?.addEventListener('click', () => { sounds.playClick(); this.resetTimer(); });
     document.getElementById('timer-mode-pomo')?.addEventListener('click', () => { sounds.playClick(); this.setTimerMode('pomo'); });
     document.getElementById('timer-mode-stopwatch')?.addEventListener('click', () => { sounds.playClick(); this.setTimerMode('stopwatch'); });
 
-    // Photo proof
     document.getElementById('photo-proof-input')?.addEventListener('change', e => this.handlePhotoProof(e));
-
-    // Penalty
     document.getElementById('clear-penalty-btn')?.addEventListener('click', () => { sounds.playClick(); this.clearPenaltyZone(); });
-
-    // Admin
     document.getElementById('admin-refresh-btn')?.addEventListener('click', () => { sounds.playClick(); this.renderAdminDashboard(); });
+    document.getElementById('check-update-btn')?.addEventListener('click', () => { sounds.playClick(); this.checkForSystemUpdate(); });
   }
 
   bindAIEvents() {
-    // Goal preset chips
     document.querySelectorAll('.preset-chip').forEach(chip => {
       chip.addEventListener('click', e => {
         sounds.playClick();
@@ -260,9 +241,37 @@ class SoloLevelingApp {
     });
   }
 
-  // ─────────────────────────────────────────
-  // VIEW SWITCHING
-  // ─────────────────────────────────────────
+  showSystemMessage(title, message, type = 'info') {
+    const container = document.getElementById('system-toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `system-toast type-${type}`;
+    
+    let icon = '🔔';
+    if (type === 'success') icon = '✅';
+    if (type === 'error') icon = '⚠️';
+    if (type === 'warning') icon = '⚡';
+
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.5rem;" class="toast-title">
+        <span>${icon}</span> <span>[SYSTEM]: ${title}</span>
+      </div>
+      <div class="toast-message">${message}</div>
+    `;
+
+    container.appendChild(toast);
+
+    if (type === 'error') sounds.playPenalty();
+    else if (type === 'success') sounds.playQuestComplete();
+    else sounds.playClick();
+
+    setTimeout(() => {
+      toast.classList.add('toast-fade-out');
+      toast.addEventListener('animationend', () => toast.remove());
+    }, 4000);
+  }
+
   switchView(viewId) {
     document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
@@ -276,20 +285,23 @@ class SoloLevelingApp {
     if (viewId === 'quests-view') this.renderQuests();
   }
 
-  // ─────────────────────────────────────────
-  // AUTH
-  // ─────────────────────────────────────────
   async loginGoogle() {
     if (!this.firebaseAuth || !this.googleProvider || !window.FirebaseModules) {
       return this.loginDemo();
     }
     try {
       const { signInWithPopup } = window.FirebaseModules;
+      this.googleProvider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(this.firebaseAuth, this.googleProvider);
       await this.handleFirebaseLogin(result.user);
     } catch (e) {
       console.error('Google login error:', e);
-      alert(`Login error: ${e.message}`);
+      if (e.code === 'auth/web-storage-unsupported' || e.message?.includes('sessionStorage')) {
+        this.showSystemMessage('Storage Warning', 'Browser storage restricted. Switching to Demo Mode.', 'warning');
+        this.loginDemo();
+      } else if (e.code !== 'auth/popup-closed-by-user') {
+        this.showSystemMessage('Authentication Error', e.message, 'error');
+      }
     }
   }
 
@@ -314,7 +326,7 @@ class SoloLevelingApp {
             isAdmin: false,
             onboarded: false
           };
-          setDoc(doc(this.db, 'users', user.uid), profile, { merge: true }).catch(() => { });
+          setDoc(doc(this.db, 'users', user.uid), profile, { merge: true }).catch(() => {});
         }
       } catch (e) {
         console.warn('Firestore login:', e);
@@ -351,6 +363,7 @@ class SoloLevelingApp {
     this.saveState();
     this.updateUI();
     this.switchView('status-view');
+    this.showSystemMessage('System Awakened', 'Welcome back, Hunter.', 'success');
   }
 
   completeOnboarding() {
@@ -364,11 +377,12 @@ class SoloLevelingApp {
     this.saveState();
     this.updateUI();
     this.switchView('status-view');
+    this.showSystemMessage('Awakening Complete', 'Your Hunter profile has been registered.', 'success');
   }
 
   logout() {
     if (this.firebaseAuth && window.FirebaseModules) {
-      window.FirebaseModules.signOut(this.firebaseAuth).catch(() => { });
+      window.FirebaseModules.signOut(this.firebaseAuth).catch(() => {});
     }
     this.currentPlayer = null;
     localStorage.removeItem('sl_player_v3');
@@ -378,16 +392,13 @@ class SoloLevelingApp {
     this.switchView('auth-view');
   }
 
-  // ─────────────────────────────────────────
-  // RANK SYSTEM (E → National Level)
-  // ─────────────────────────────────────────
   calculateRank(level) {
     if (level >= 50) return { letter: 'NL', label: 'NATIONAL LEVEL HUNTER', color: '#f0f4ff', glow: 'rgba(240, 244, 255, 0.6)' };
     if (level >= 40) return { letter: 'S', label: 'S-RANK HUNTER', color: '#fbbf24', glow: 'rgba(251,191,36,0.5)' };
     if (level >= 30) return { letter: 'A', label: 'A-RANK HUNTER', color: '#a78bfa', glow: 'rgba(167,139,250,0.5)' };
     if (level >= 20) return { letter: 'B', label: 'B-RANK HUNTER', color: '#60a5fa', glow: 'rgba(96,165,250,0.5)' };
     if (level >= 12) return { letter: 'C', label: 'C-RANK HUNTER', color: '#34d399', glow: 'rgba(52,211,153,0.5)' };
-    if (level >= 6) return { letter: 'D', label: 'D-RANK HUNTER', color: '#94a3b8', glow: 'rgba(148,163,184,0.5)' };
+    if (level >= 6)  return { letter: 'D', label: 'D-RANK HUNTER', color: '#94a3b8', glow: 'rgba(148,163,184,0.5)' };
     return { letter: 'E', label: 'E-RANK HUNTER', color: '#64748b', glow: 'rgba(100,116,139,0.4)' };
   }
 
@@ -403,14 +414,10 @@ class SoloLevelingApp {
     return titles[highest[0]] || 'The Awakened Student';
   }
 
-  // ─────────────────────────────────────────
-  // MAIN UI UPDATE
-  // ─────────────────────────────────────────
   updateUI() {
     if (!this.currentPlayer) return;
     const p = this.currentPlayer;
 
-    // Header HUD
     document.getElementById('user-hud-profile').style.display = 'flex';
     document.getElementById('hud-user-avatar').src = p.avatar;
     document.getElementById('hud-user-name').innerText = p.name;
@@ -419,7 +426,6 @@ class SoloLevelingApp {
     document.getElementById('desktop-nav').style.display = 'flex';
     document.getElementById('streak-shield-banner').style.display = 'flex';
 
-    // Admin tab
     const adminTab = document.getElementById('admin-tab-btn');
     const mobileAdmin = document.getElementById('mobile-admin-item');
     if (p.isAdmin) {
@@ -430,17 +436,13 @@ class SoloLevelingApp {
       mobileAdmin?.style.setProperty('display', 'none');
     }
 
-    // Rank badge
     const rank = this.calculateRank(p.level);
     document.getElementById('player-rank-letter').innerText = rank.letter;
     document.getElementById('player-rank-label').innerText = rank.label;
-    const badge = document.querySelector('.rank-badge-glow');
-    if (badge) badge.style.boxShadow = `0 0 30px ${rank.glow}`;
 
-    // Profile details
     document.getElementById('player-display-name').innerText = p.name;
     document.getElementById('player-display-title').innerText = `✨ ${this.getIdentityTitle(p.stats)}`;
-    document.getElementById('player-major').innerText = p.major || 'Unknown Major';
+    document.getElementById('player-major').innerText = p.major || 'Unknown';
     document.getElementById('player-year').innerText = p.year || '—';
     document.getElementById('player-gold-display').innerText = `🪙 ${(p.gold || 0).toLocaleString()}`;
     document.getElementById('shop-gold-display').innerText = (p.gold || 0).toLocaleString();
@@ -448,14 +450,12 @@ class SoloLevelingApp {
     const done = p.quests.filter(q => q.completed).length;
     document.getElementById('player-quests-count').innerText = `${done} / ${p.quests.length} Quests`;
 
-    // XP / Level
     document.getElementById('player-level').innerText = `LVL ${p.level}`;
     const xpPct = Math.min(100, Math.round((p.xp / p.xpToNextLevel) * 100));
     document.getElementById('player-xp-fill').style.width = `${xpPct}%`;
     document.getElementById('player-xp-text').innerText = `${p.xp} / ${p.xpToNextLevel} XP`;
     document.getElementById('stat-points-available').innerText = `${p.unassignedPoints} Points Available`;
 
-    // 7 Stats
     ['int', 'agi', 'str', 'vita', 'per', 'wth', 'dis'].forEach(key => {
       const raw = p.stats[key] || 0;
       const equipped = this._getEquipBoost(key);
@@ -465,13 +465,6 @@ class SoloLevelingApp {
       if (valEl) valEl.innerText = total > raw ? `${total} (+${equipped})` : total;
       if (barEl) barEl.style.width = `${Math.min(100, total * 1.2)}%`;
     });
-
-    // Daily essential tracker
-    const de = p.dailyEssential || { pushups: 0, situps: 0, squats: 0, km: 0 };
-    document.getElementById('daily-pushups-count').innerText = `${de.pushups} / 100`;
-    document.getElementById('daily-situps-count').innerText = `${de.situps} / 100`;
-    document.getElementById('daily-squats-count').innerText = `${de.squats} / 100`;
-    document.getElementById('daily-run-count').innerText = `${de.km} / 10 km`;
 
     this.renderQuests();
   }
@@ -486,9 +479,6 @@ class SoloLevelingApp {
     return boost;
   }
 
-  // ─────────────────────────────────────────
-  // QUESTS
-  // ─────────────────────────────────────────
   renderQuests() {
     const container = document.getElementById('quests-list-container');
     if (!container) return;
@@ -497,7 +487,6 @@ class SoloLevelingApp {
     this.currentPlayer.quests.forEach(quest => {
       const card = document.createElement('div');
       card.className = `glass-panel quest-card ${quest.completed ? 'completed' : ''}`;
-
       const diffColors = { E: '#94a3b8', D: '#60a5fa', C: '#34d399', B: '#a78bfa', A: '#f59e0b', S: '#f43f5e' };
 
       card.innerHTML = `
@@ -533,7 +522,7 @@ class SoloLevelingApp {
     if (!quest) return;
 
     if (!quest.completed && quest.requiresPhoto) {
-      alert('📷 This is an S-Rank quest! Please go to the Verification Timers tab, attach a photo proof, then come back to complete it.');
+      this.showSystemMessage('S-Rank Verification', 'Attach photo proof in the Focus tab before clearing this quest.', 'warning');
       this.switchView('timer-view');
       return;
     }
@@ -547,9 +536,8 @@ class SoloLevelingApp {
       if (quest.statKey && this.currentPlayer.stats[quest.statKey] !== undefined) {
         this.currentPlayer.stats[quest.statKey] += 2;
       }
-      this.addHistoryEntry(`✅ Completed: ${quest.title} (+${quest.xpReward} XP, +${quest.goldReward} 🪙)`);
+      this.addHistoryEntry(`✅ Completed: ${quest.title} (+${quest.xpReward} XP)`);
       this.checkLevelUp();
-      this.checkPenaltyZone();
     } else {
       sounds.playClick();
       this.currentPlayer.xp = Math.max(0, this.currentPlayer.xp - quest.xpReward);
@@ -561,12 +549,8 @@ class SoloLevelingApp {
   }
 
   promptAddCustomQuest() {
-    const title = prompt('⭐ Enter your Secret / Custom Quest title:');
+    const title = prompt('⭐ Enter your Secret Quest title:');
     if (!title) return;
-
-    const xpStr = prompt('XP Reward (e.g. 300):', '300');
-    const goldStr = prompt('Gold Reward (e.g. 200):', '200');
-    const diff = prompt('Difficulty Rank (E / D / C / B / A / S):', 'C');
 
     const quest = {
       id: `custom_${Date.now()}`,
@@ -574,27 +558,26 @@ class SoloLevelingApp {
       category: 'secret',
       statReward: 'DIS +3',
       statKey: 'dis',
-      xpReward: parseInt(xpStr) || 300,
-      goldReward: parseInt(goldStr) || 200,
-      difficulty: (diff || 'C').toUpperCase().slice(0, 1),
-      stackTrigger: 'Custom quest — prove yourself worthy',
+      xpReward: 300,
+      goldReward: 200,
+      difficulty: 'C',
+      stackTrigger: 'Custom quest completed',
       completed: false,
-      requiresPhoto: (diff || 'C').toUpperCase() === 'S'
+      requiresPhoto: false
     };
 
     this.currentPlayer.quests.unshift(quest);
     sounds.playLevelUp();
     this.saveState();
     this.updateUI();
-    alert(`⭐ Secret Quest "${title}" added! Photo proof required for S-Rank.`);
+    this.showSystemMessage('Quest Added', `Secret quest "${title}" registered to your log.`, 'success');
   }
 
-  // ─────────────────────────────────────────
-  // STAT & LEVEL
-  // ─────────────────────────────────────────
   addStatPoint(statKey) {
-    if (this.currentPlayer.unassignedPoints <= 0) return;
-    if (this.currentPlayer.stats[statKey] === undefined) return;
+    if (this.currentPlayer.unassignedPoints <= 0) {
+      this.showSystemMessage('No Points', 'Level up to earn unassigned attribute points.', 'warning');
+      return;
+    }
     this.currentPlayer.stats[statKey] += 1;
     this.currentPlayer.unassignedPoints -= 1;
     this.saveState();
@@ -609,86 +592,20 @@ class SoloLevelingApp {
       this.currentPlayer.xpToNextLevel = Math.round(this.currentPlayer.xpToNextLevel * 1.25);
       this.currentPlayer.unassignedPoints += 5;
       const rank = this.calculateRank(this.currentPlayer.level);
-      this.addHistoryEntry(`🎉 LEVEL UP → LVL ${this.currentPlayer.level} (${rank.label}) +5 Stat Points!`);
-      alert(`🎉 LEVEL UP!\nYou are now LVL ${this.currentPlayer.level} — ${rank.label}\n+5 Stat Points awarded!`);
+      this.addHistoryEntry(`🎉 LEVEL UP → LVL ${this.currentPlayer.level}`);
+      this.showSystemMessage('LEVEL UP!', `You are now LVL ${this.currentPlayer.level} — ${rank.label}. +5 Points awarded!`, 'success');
     }
   }
 
-  // ─────────────────────────────────────────
-  // PENALTY ZONE ENGINE
-  // ─────────────────────────────────────────
   checkPenaltyZone() {
     if (!this.currentPlayer) return;
-
     const today = new Date().toDateString();
-    const lastDate = this.currentPlayer.lastQuestDate;
-
-    if (lastDate && lastDate !== today) {
-      const de = this.currentPlayer.dailyEssential || {};
-      const essentialsMissed = de.pushups < 100 || de.situps < 100 || de.squats < 100 || de.km < 10;
-
-      if (essentialsMissed && !this.currentPlayer.penaltyActive) {
-        this.triggerPenaltyZone();
-      }
-
-      this.currentPlayer.dailyEssential = { pushups: 0, situps: 0, squats: 0, km: 0 };
+    if (this.currentPlayer.lastQuestDate && this.currentPlayer.lastQuestDate !== today) {
       this.currentPlayer.quests = this.currentPlayer.quests.map(q => ({ ...q, completed: false }));
     }
-
     this.currentPlayer.lastQuestDate = today;
-
-    if (this.currentPlayer.penaltyActive) {
-      this.startPenaltyCountdown();
-    }
   }
 
-  triggerPenaltyZone() {
-    sounds.playPenalty();
-    this.currentPlayer.penaltyActive = true;
-    this.currentPlayer.penaltyEndsAt = Date.now() + 4 * 60 * 60 * 1000;
-    this.addHistoryEntry('⚠️ PENALTY ZONE TRIGGERED — Daily essentials not completed!');
-    this.saveState();
-    alert('⚠️ SYSTEM ALERT: PENALTY ZONE\nYou failed to complete your mandatory daily quest.\nYou must survive the Penalty Zone — complete 100 Burpees or 4 Hours Focus!');
-    this.switchView('penalty-view');
-    this.startPenaltyCountdown();
-  }
-
-  startPenaltyCountdown() {
-    if (this.penaltyInterval) clearInterval(this.penaltyInterval);
-    const el = document.getElementById('penalty-countdown');
-    if (!el) return;
-
-    this.penaltyInterval = setInterval(() => {
-      const remaining = (this.currentPlayer.penaltyEndsAt || 0) - Date.now();
-      if (remaining <= 0) {
-        clearInterval(this.penaltyInterval);
-        el.innerText = '00:00:00';
-        this.clearPenaltyZone();
-        return;
-      }
-      const h = Math.floor(remaining / 3600000);
-      const m = Math.floor((remaining % 3600000) / 60000);
-      const s = Math.floor((remaining % 60000) / 1000);
-      el.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }, 1000);
-  }
-
-  clearPenaltyZone() {
-    if (this.penaltyInterval) clearInterval(this.penaltyInterval);
-    this.currentPlayer.penaltyActive = false;
-    this.currentPlayer.penaltyEndsAt = null;
-    this.currentPlayer.xp = Math.max(0, this.currentPlayer.xp - 50);
-    this.addHistoryEntry('⚔️ Survived Penalty Zone — XP toll paid.');
-    sounds.playQuestComplete();
-    this.saveState();
-    this.updateUI();
-    this.switchView('status-view');
-    alert('⚔️ You survived the Penalty Zone!\n-50 XP penalty toll paid. Stay disciplined, Hunter!');
-  }
-
-  // ─────────────────────────────────────────
-  // TIMER ENGINE (Pomodoro & Stopwatch)
-  // ─────────────────────────────────────────
   setTimerMode(mode) {
     this.timerMode = mode;
     this.resetTimer();
@@ -720,12 +637,12 @@ class SoloLevelingApp {
             this.timerRunning = false;
             document.getElementById('timer-start-btn').innerText = 'START';
             sounds.playQuestComplete();
-            alert('✅ Pomodoro Session Complete! +50 XP bonus for 25 min focus!');
             this.currentPlayer.xp += 50;
-            this.currentPlayer.gold = (this.currentPlayer.gold || 0) + 25;
+            this.currentPlayer.gold += 25;
             this.checkLevelUp();
             this.saveState();
             this.updateUI();
+            this.showSystemMessage('Focus Cleared', 'Pomodoro session complete! +50 XP awarded.', 'success');
             this.timerSeconds = 25 * 60;
           }
           this._updateTimerDisplay();
@@ -743,11 +660,8 @@ class SoloLevelingApp {
     clearInterval(this.timerInterval);
     this.timerRunning = false;
     document.getElementById('timer-start-btn').innerText = 'START';
-    if (this.timerMode === 'pomo') {
-      this.timerSeconds = 25 * 60;
-    } else {
-      this.stopwatchSeconds = 0;
-    }
+    if (this.timerMode === 'pomo') this.timerSeconds = 25 * 60;
+    else this.stopwatchSeconds = 0;
     this._updateTimerDisplay();
   }
 
@@ -758,33 +672,15 @@ class SoloLevelingApp {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
-    if (h > 0) {
-      el.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    } else {
-      el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+    el.innerText = h > 0 ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
   handlePhotoProof(event) {
     const file = event.target.files[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const preview = document.getElementById('photo-proof-preview');
-      const img = document.getElementById('photo-preview-img');
-      if (preview && img) {
-        img.src = e.target.result;
-        preview.style.display = 'block';
-      }
-    };
-    reader.readAsDataURL(file);
-    alert('📷 Photo proof captured! You can now complete S-Rank quests.');
+    this.showSystemMessage('Proof Captured', 'Photo verification registered for S-Rank validation.', 'success');
   }
 
-  // ─────────────────────────────────────────
-  // GOLD SHOP & EQUIPMENT
-  // ─────────────────────────────────────────
   renderShop() {
     const container = document.getElementById('shop-items-container');
     const equippedContainer = document.getElementById('equipped-items-container');
@@ -798,7 +694,7 @@ class SoloLevelingApp {
 
     if (equippedContainer) {
       if (equippedIds.length === 0) {
-        equippedContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">No gear equipped yet. Visit the shop below!</div>';
+        equippedContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">No gear equipped.</div>';
       } else {
         equippedIds.forEach(itemId => {
           const item = SHOP_CATALOGUE.find(i => i.id === itemId);
@@ -811,12 +707,9 @@ class SoloLevelingApp {
               <div>
                 <div class="item-name" style="font-size: 0.95rem;">${item.name}</div>
                 <div class="item-effect">${item.description}</div>
-                <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--rarity-${item.rarity});">${item.rarity}</span>
               </div>
             </div>
-            <button class="btn-primary btn-unequip" data-id="${item.id}" style="margin-top: 0.75rem; width: 100%; background: rgba(244,63,94,0.2); border: 1px solid var(--color-rose); font-size: 0.8rem;">
-              ✕ Unequip
-            </button>
+            <button class="btn-primary btn-unequip" data-id="${item.id}" style="margin-top: 0.75rem; width: 100%; background: rgba(244,63,94,0.2); border: 1px solid var(--color-rose); font-size: 0.8rem;">✕ Unequip</button>
           `;
           div.querySelector('.btn-unequip').addEventListener('click', e => {
             sounds.playClick();
@@ -838,17 +731,17 @@ class SoloLevelingApp {
         <div>
           <div class="item-icon">${item.icon}</div>
           <div class="item-name">${item.name}</div>
-          <div style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--rarity-${item.rarity}); margin-bottom: 0.35rem;">${item.rarity} ${item.type === 'equipment' ? '— Equipment' : '— Real-Life Reward'}</div>
+          <div style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--rarity-${item.rarity}); margin-bottom: 0.35rem;">${item.rarity}</div>
           <div class="item-effect">${item.description}</div>
         </div>
         <div style="margin-top: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
           <div style="font-family: var(--font-heading); font-weight: 700; color: var(--color-gold);">🪙 ${item.cost.toLocaleString()}</div>
           ${alreadyOwned
-          ? (item.type === 'equipment'
-            ? `<button class="btn-primary btn-equip" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; background: ${isEquipped ? 'rgba(16,185,129,0.3)' : 'rgba(139,92,246,0.3)'}; border: 1px solid ${isEquipped ? 'var(--color-emerald)' : 'var(--color-violet)'};">${isEquipped ? '✅ Equipped' : 'Equip'}</button>`
-            : '<span style="color: var(--color-emerald); font-size: 0.8rem; font-weight: 700;">✅ Redeemed</span>')
-          : `<button class="btn-primary btn-buy" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; ${!canAfford ? 'opacity: 0.45; cursor: not-allowed;' : ''}">${canAfford ? 'Buy' : 'Not enough 🪙'}</button>`
-        }
+            ? (item.type === 'equipment'
+                ? `<button class="btn-primary btn-equip" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; background: ${isEquipped ? 'rgba(16,185,129,0.3)' : 'rgba(139,92,246,0.3)'}; border: 1px solid ${isEquipped ? 'var(--color-emerald)' : 'var(--color-violet)'};">${isEquipped ? 'Equipped' : 'Equip'}</button>`
+                : '<span style="color: var(--color-emerald); font-size: 0.8rem; font-weight: 700;">Redeemed</span>')
+            : `<button class="btn-primary btn-buy" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; ${!canAfford ? 'opacity: 0.45; cursor: not-allowed;' : ''}">${canAfford ? 'Buy' : 'Insufficient 🪙'}</button>`
+          }
         </div>
       `;
 
@@ -881,8 +774,7 @@ class SoloLevelingApp {
     if (item.type === 'equipment') {
       this.equipItem(itemId, true);
     } else {
-      this.addHistoryEntry(`🛍️ Purchased: ${item.name} (-${item.cost} 🪙) — Enjoy your reward!`);
-      alert(`🎉 Reward Purchased!\n\n${item.icon} ${item.name}\n\n${item.description}`);
+      this.showSystemMessage('Reward Unlocked', `${item.icon} ${item.name} acquired. Enjoy your break!`, 'success');
     }
 
     this.saveState();
@@ -896,7 +788,7 @@ class SoloLevelingApp {
     this.currentPlayer.equipped = this.currentPlayer.equipped || {};
     this.currentPlayer.equipped[item.type + '_' + itemId] = itemId;
     if (!skipSound) sounds.playLevelUp();
-    this.addHistoryEntry(`⚔️ Equipped: ${item.name} (${item.description})`);
+    this.showSystemMessage('Artifact Equipped', `Equipped ${item.name}. Stat multipliers applied.`, 'success');
     this.saveState();
     this.updateUI();
     this.renderShop();
@@ -911,9 +803,6 @@ class SoloLevelingApp {
     this.renderShop();
   }
 
-  // ─────────────────────────────────────────
-  // SVG RADAR CHART (7 Stats)
-  // ─────────────────────────────────────────
   renderRadarChart() {
     const svg = document.getElementById('radar-chart-svg');
     if (!svg || !this.currentPlayer) return;
@@ -965,9 +854,6 @@ class SoloLevelingApp {
     svg.innerHTML = html;
   }
 
-  // ─────────────────────────────────────────
-  // HISTORY LOG
-  // ─────────────────────────────────────────
   addHistoryEntry(text) {
     const timestamp = new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
     this.currentPlayer.historyLog = this.currentPlayer.historyLog || [];
@@ -983,7 +869,7 @@ class SoloLevelingApp {
     const log = this.currentPlayer.historyLog || [];
 
     if (log.length === 0) {
-      container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">No quest history yet. Complete your first quest!</div>';
+      container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">No history recorded.</div>';
       return;
     }
 
@@ -995,19 +881,14 @@ class SoloLevelingApp {
     `).join('');
   }
 
-  // ─────────────────────────────────────────
-  // ENHANCED AI QUEST ENGINE
-  // ─────────────────────────────────────────
   async fetchGeminiApiKeyFromDB() {
     if (this.db && window.FirebaseModules) {
       try {
         const { doc, getDoc } = window.FirebaseModules;
-        for (const name of ['gemini', 'Gemini', 'GEMINI']) {
-          const snap = await getDoc(doc(this.db, 'config', name)).catch(() => null);
-          if (snap?.exists()) {
-            const key = snap.data().apiKey || snap.data().key;
-            if (key) { localStorage.setItem('sl_gemini_key', key); return key; }
-          }
+        const snap = await getDoc(doc(this.db, 'config', 'gemini')).catch(() => null);
+        if (snap?.exists()) {
+          const key = snap.data().apiKey || snap.data().key;
+          if (key) return key;
         }
       } catch (e) { console.warn('Config fetch:', e); }
     }
@@ -1017,18 +898,10 @@ class SoloLevelingApp {
   async generateAIQuests() {
     const goalInput = document.getElementById('ai-goal-input');
     const goal = goalInput?.value.trim() || 'Be a better student';
-    const focusStat = document.getElementById('ai-focus-select')?.value || 'int';
-    const time = document.getElementById('ai-time-select')?.value || '4h';
     const resultContainer = document.getElementById('ai-generated-results');
 
     if (resultContainer) {
-      resultContainer.innerHTML = `
-        <div style="text-align: center; padding: 2rem; color: var(--color-cyan);">
-          <div class="pulse-dot" style="margin: 0 auto 1rem auto; width: 14px; height: 14px;"></div>
-          <div style="font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem;">[SYSTEM] ANALYZING GOAL: "${goal}"</div>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Synthesizing optimal quest parameters and stat multipliers...</p>
-        </div>
-      `;
+      resultContainer.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--color-cyan);">⚡ Synthesizing Quests for: "${goal}"...</div>`;
     }
 
     const apiKey = await this.fetchGeminiApiKeyFromDB();
@@ -1036,12 +909,8 @@ class SoloLevelingApp {
 
     if (apiKey) {
       try {
-        const prompt = `You are the Solo Leveling RPG System AI. Convert this user goal into 3 structured daily quests:
-Goal: "${goal}"
-Target stat: ${focusStat.toUpperCase()} | Available time: ${time}
-
-Return ONLY a raw JSON array (no markdown, no backticks) with objects: 
-{ "title": string, "category": "academics"|"coding"|"fitness"|"lifestyle"|"secret", "statReward": string (e.g. "INT +3"), "statKey": "int"|"agi"|"str"|"vita"|"per"|"wth"|"dis", "xpReward": number, "goldReward": number, "difficulty": "E"|"D"|"C"|"B"|"A"|"S", "stackTrigger": string, "requiresPhoto": boolean }`;
+        const prompt = `Convert this user goal into 3 structured daily quests: Goal: "${goal}"
+Return ONLY a raw JSON array with objects: { "title": string, "category": "academics"|"coding"|"fitness"|"lifestyle"|"secret", "statReward": string, "statKey": "int"|"agi"|"str"|"vita"|"per"|"wth"|"dis", "xpReward": number, "goldReward": number, "difficulty": "E"|"D"|"C"|"B"|"A"|"S", "stackTrigger": string, "requiresPhoto": boolean }`;
 
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
@@ -1053,96 +922,31 @@ Return ONLY a raw JSON array (no markdown, no backticks) with objects:
           const data = await res.json();
           const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (raw) {
-            const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(cleaned);
+            const parsed = JSON.parse(raw.replace(/```json/g, '').replace(/```/g, '').trim());
             if (Array.isArray(parsed)) {
-              generatedQuests = parsed.map((q, i) => ({
-                ...q,
-                id: `ai_${Date.now()}_${i}`,
-                completed: false,
-                goldReward: q.goldReward || 150
-              }));
+              generatedQuests = parsed.map((q, i) => ({ ...q, id: `ai_${Date.now()}_${i}`, completed: false }));
             }
           }
         }
-      } catch (e) {
-        console.warn('Gemini API Error, falling back:', e);
-      }
+      } catch (e) { console.warn('Gemini API Error:', e); }
     }
 
     if (generatedQuests.length === 0) {
       generatedQuests = [
-        {
-          id: `ai_${Date.now()}_1`,
-          title: `Deconstruct Goal: "${goal}" into Roadmap`,
-          category: 'academics',
-          statReward: `${focusStat.toUpperCase()} +3`,
-          statKey: focusStat,
-          xpReward: 250,
-          goldReward: 150,
-          difficulty: 'C',
-          stackTrigger: 'After waking up, write 3 sub-tasks in your journal',
-          completed: false,
-          requiresPhoto: false
-        },
-        {
-          id: `ai_${Date.now()}_2`,
-          title: `45-min Deep Focus Block for "${goal}"`,
-          category: 'coding',
-          statReward: `${focusStat.toUpperCase()} +4`,
-          statKey: focusStat,
-          xpReward: 300,
-          goldReward: 200,
-          difficulty: 'B',
-          stackTrigger: 'After lunch, open timer view and complete 1 Pomodoro',
-          completed: false,
-          requiresPhoto: false
-        },
-        {
-          id: `ai_${Date.now()}_3`,
-          title: `Daily Milestone Review & Commit`,
-          category: 'secret',
-          statReward: 'DIS +3',
-          statKey: 'dis',
-          xpReward: 200,
-          goldReward: 120,
-          difficulty: 'D',
-          stackTrigger: 'Before bed, log your daily progress in the system',
-          completed: false,
-          requiresPhoto: false
-        }
+        { id: `ai_1`, title: `Roadmap Milestone for "${goal}"`, category: 'academics', statReward: 'INT +3', statKey: 'int', xpReward: 250, goldReward: 150, difficulty: 'C', stackTrigger: 'Morning study routine', completed: false, requiresPhoto: false },
+        { id: `ai_2`, title: `45-min Deep Focus Block`, category: 'coding', statReward: 'PER +4', statKey: 'per', xpReward: 300, goldReward: 200, difficulty: 'B', stackTrigger: 'Post-lunch deep work', completed: false, requiresPhoto: false }
       ];
     }
 
     if (resultContainer) {
-      const diffColors = { E: '#94a3b8', D: '#60a5fa', C: '#34d399', B: '#a78bfa', A: '#f59e0b', S: '#f43f5e' };
-
       resultContainer.innerHTML = `
         <div style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-violet-bright);">✨ Generated System Quests</h3>
-            <button id="accept-ai-quests-btn" class="btn-primary" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
-              ⚔️ Accept & Add to Quest Log
-            </button>
+            <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-violet-bright);">✨ AI Quests Ready</h3>
+            <button id="accept-ai-quests-btn" class="btn-primary" style="font-size: 0.85rem; padding: 0.4rem 1rem;">⚔️ Accept Quests</button>
           </div>
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            ${generatedQuests.map(q => `
-              <div class="glass-panel" style="padding: 0.85rem 1rem; border-left: 3px solid ${diffColors[q.difficulty] || '#3b82f6'};">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <div>
-                    <span class="quest-category-tag cat-${q.category}">${q.category}</span>
-                    <span style="font-size: 0.65rem; font-weight: 800; color: ${diffColors[q.difficulty]}; background: rgba(255,255,255,0.05); padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.3rem;">${q.difficulty}-RANK</span>
-                    <div style="font-weight: 700; font-size: 0.95rem; margin-top: 0.2rem;">${q.title}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; margin-top: 0.15rem;">${q.stackTrigger}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="color: var(--color-cyan); font-weight: 700; font-size: 0.85rem;">+${q.xpReward} XP</div>
-                    <div style="color: var(--color-gold); font-weight: 700; font-size: 0.8rem;">+${q.goldReward} 🪙</div>
-                    <div style="color: var(--color-violet-bright); font-size: 0.75rem;">${q.statReward}</div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
+            ${generatedQuests.map(q => `<div class="glass-panel" style="padding: 0.85rem 1rem;"><div style="font-weight: 700; font-size: 0.95rem;">${q.title}</div><div style="font-size: 0.75rem; color: var(--text-muted);">${q.stackTrigger}</div></div>`).join('')}
           </div>
         </div>
       `;
@@ -1150,22 +954,49 @@ Return ONLY a raw JSON array (no markdown, no backticks) with objects:
       document.getElementById('accept-ai-quests-btn')?.addEventListener('click', () => {
         sounds.playLevelUp();
         this.currentPlayer.quests = [...generatedQuests, ...this.currentPlayer.quests];
-        this.addHistoryEntry(`🤖 AI Quest Engine generated ${generatedQuests.length} quests for: "${goal}"`);
         this.saveState();
         this.updateUI();
         this.switchView('quests-view');
-        alert(`⚔️ Quests Accepted! ${generatedQuests.length} new challenges added to your daily log.`);
+        this.showSystemMessage('Quests Accepted', `${generatedQuests.length} new quests added to log.`, 'success');
       });
     }
   }
 
-  // ─────────────────────────────────────────
-  // ENHANCED ADMIN INSPECTOR PANEL
-  // ─────────────────────────────────────────
+  async checkForSystemUpdate() {
+    const CURRENT_VERSION = "1.0.0"; 
+    const REPO_OWNER = "eniayarasu-max";
+    const REPO_NAME = "TheSystem";
+
+    this.showSystemMessage('System Update', 'Checking GitHub releases...', 'info');
+
+    try {
+      const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`);
+      if (!response.ok) throw new Error("No releases found.");
+      
+      const release = await response.json();
+      const latestVersion = release.tag_name.replace('v', ''); 
+      
+      if (latestVersion !== CURRENT_VERSION) {
+        if (confirm(`✨ New Update v${latestVersion} Available!\n\nDownload now?`)) {
+          const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
+          if (apkAsset && window.Capacitor?.Plugins?.Browser) {
+             await window.Capacitor.Plugins.Browser.open({ url: apkAsset.browser_download_url });
+          } else {
+             this.showSystemMessage('Download Error', 'No APK file attached to GitHub release.', 'error');
+          }
+        }
+      } else {
+        this.showSystemMessage('Up to Date', `You are running the latest build (v${CURRENT_VERSION}).`, 'success');
+      }
+    } catch(e) {
+      this.showSystemMessage('Update Failed', 'Could not connect to GitHub repository.', 'error');
+    }
+  }
+
   async renderAdminDashboard() {
     const container = document.getElementById('admin-players-container');
     if (!container) return;
-    container.innerHTML = '<div style="color: var(--color-cyan); padding: 1.5rem; text-align: center;">⚡ Connecting to Live Firestore Player Registry...</div>';
+    container.innerHTML = '<div style="color: var(--color-cyan); padding: 1.5rem; text-align: center;">⚡ Loading Registry...</div>';
 
     if (this.db && window.FirebaseModules) {
       try {
@@ -1176,257 +1007,21 @@ Return ONLY a raw JSON array (no markdown, no backticks) with objects:
           snapshot.forEach(d => players.push(d.data()));
           this.allPlayers = players;
         }
-      } catch (e) {
-        console.warn('Admin Firestore fetch error:', e);
-      }
+      } catch (e) { console.warn(e); }
     }
 
     if (!this.allPlayers || this.allPlayers.length === 0) {
-      this.allPlayers = [
-        this.currentPlayer,
-        {
-          id: 'player_demo_2',
-          name: 'Cha Hae-In',
-          email: 'haein@hunterassociation.com',
-          major: 'Kinesiology & Sports Science',
-          year: '4th Year',
-          level: 32,
-          xp: 1200,
-          xpToNextLevel: 2500,
-          gold: 4800,
-          streakDays: 14,
-          penaltyActive: false,
-          stats: { int: 25, agi: 58, str: 45, vita: 40, per: 35, wth: 30, dis: 50 },
-          equipped: { equipment_1: 'item_dagger' },
-          quests: [
-            { title: 'Sword Technique Drill (50 Reps)', category: 'fitness', difficulty: 'A', completed: true, xpReward: 400, goldReward: 300 },
-            { title: 'Cardio Sprint Session', category: 'fitness', difficulty: 'B', completed: false, xpReward: 250, goldReward: 180 }
-          ],
-          dailyEssential: { pushups: 100, situps: 100, squats: 100, km: 10 },
-          historyLog: [{ text: '✅ Completed Sword Technique Drill', timestamp: 'Today, 10:30 AM' }]
-        }
-      ];
+      this.allPlayers = [this.currentPlayer];
     }
 
-    this._renderAdminGrid();
+    container.innerHTML = this.allPlayers.map(p => `
+      <div class="glass-panel" style="padding: 1rem; margin-bottom: 1rem;">
+        <div style="font-weight: 700; font-size: 1.1rem; color: var(--color-violet-bright);">${p.name}</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">${p.email || 'Demo User'} • LVL ${p.level || 1} • 🪙 ${p.gold || 0}</div>
+      </div>
+    `).join('');
   }
 
-  _renderAdminGrid() {
-    const container = document.getElementById('admin-players-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const statColors = { int: '#3b82f6', agi: '#06b6d4', str: '#ec4899', vita: '#10b981', per: '#8b5cf6', wth: '#fbbf24', dis: '#f97316' };
-    const statLabels = { int: 'INT', agi: 'AGI', str: 'STR', vita: 'VITA', per: 'PER', wth: 'WTH', dis: 'DIS' };
-
-    this.allPlayers.forEach(player => {
-      if (player.isAdmin) return;
-
-      const done = (player.quests || []).filter(q => q.completed).length;
-      const total = (player.quests || []).length;
-      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-      const rank = this.calculateRank(player.level || 1);
-      const xpPct = Math.min(100, Math.round(((player.xp || 0) / (player.xpToNextLevel || 500)) * 100));
-      const stats = player.stats || {};
-      const equipped = player.equipped || {};
-      const equippedIds = Object.values(equipped);
-      const historyLog = (player.historyLog || []).slice(0, 5);
-
-      const box = document.createElement('div');
-      box.className = 'glass-panel';
-      box.style.cssText = 'padding: 0; margin-bottom: 1.5rem; overflow: hidden;';
-
-      const headerColor = rank.color || '#8b5cf6';
-
-      const statsHTML = Object.keys(statLabels).map(key => {
-        const val = stats[key] || 0;
-        const barPct = Math.min(100, val * 1.2);
-        return `
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-            <div style="width: 32px; height: 20px; background: ${statColors[key]}22; border: 1px solid ${statColors[key]}; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: ${statColors[key]};">${statLabels[key]}</div>
-            <div style="flex: 1; height: 7px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden;">
-              <div style="height: 100%; width: ${barPct}%; background: ${statColors[key]}; box-shadow: 0 0 6px ${statColors[key]}; border-radius: 99px;"></div>
-            </div>
-            <span style="font-size: 0.72rem; font-weight: 700; color: ${statColors[key]}; width: 24px; text-align: right;">${val}</span>
-          </div>
-        `;
-      }).join('');
-
-      const allQuestsHTML = (player.quests || []).map(q => `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
-          <div style="flex: 1;">
-            <div style="font-size: 0.78rem; font-weight: ${q.completed ? '400' : '600'}; color: ${q.completed ? 'var(--text-dim)' : 'var(--text-main)'}; text-decoration: ${q.completed ? 'line-through' : 'none'}">${q.title || 'Untitled Quest'}</div>
-            <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 0.1rem;">${q.category} • ${q.difficulty || 'E'}-Rank • +${q.xpReward || 0} XP • +${q.goldReward || 0} 🪙</div>
-          </div>
-          <span style="font-size: 0.72rem; font-weight: 700; color: ${q.completed ? 'var(--color-emerald)' : 'var(--color-pink)'}; white-space: nowrap; margin-left: 0.75rem; padding-top: 0.1rem;">${q.completed ? '✓ DONE' : '⏳ PENDING'}</span>
-        </div>
-      `).join('');
-
-      const equippedHTML = equippedIds.length > 0
-        ? equippedIds.map(id => {
-          const item = SHOP_CATALOGUE.find(i => i.id === id);
-          return item ? `<span style="font-size: 0.72rem; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.35); border-radius: 4px; padding: 0.15rem 0.45rem;">${item.icon} ${item.name}</span>` : '';
-        }).join('')
-        : '<span style="font-size: 0.72rem; color: var(--text-dim);">No gear equipped</span>';
-
-      const historyHTML = historyLog.length > 0
-        ? historyLog.map(e => `
-            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.72rem;">
-              <span style="color: var(--text-muted); flex: 1;">${e.text}</span>
-              <span style="color: var(--text-dim); white-space: nowrap; margin-left: 0.5rem;">${e.timestamp}</span>
-            </div>`).join('')
-        : '<div style="font-size: 0.72rem; color: var(--text-dim);">No history yet</div>';
-
-      const essentials = player.dailyEssential || { pushups: 0, situps: 0, squats: 0, km: 0 };
-
-      box.innerHTML = `
-        <div style="background: linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(6,4,18,0.4) 100%); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-          <div style="display: flex; align-items: center; gap: 0.85rem;">
-            <img src="${player.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=unknown'}" style="width: 46px; height: 46px; border-radius: 50%; border: 2px solid ${headerColor};">
-            <div>
-              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem;">${player.name || 'Unknown Hunter'}</div>
-              <div style="font-size: 0.75rem; color: ${headerColor}; font-weight: 700;">${rank.label} &nbsp;•&nbsp; LVL ${player.level || 1}</div>
-              <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;">${player.email || '—'} &nbsp;|&nbsp; ${player.major || '—'} &nbsp;|&nbsp; ${player.year || '—'}</div>
-            </div>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
-            ${player.penaltyActive ? '<span style="font-size: 0.75rem; font-weight: 800; color: var(--color-rose); background: rgba(244,63,94,0.15); padding: 0.25rem 0.65rem; border-radius: 99px; border: 1px solid var(--color-rose);">⚠️ PENALTY ZONE</span>' : ''}
-            <button class="btn-primary btn-award-xp" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(139,92,246,0.3);">+500 XP</button>
-            <button class="btn-primary btn-award-gold" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.4); color: var(--color-gold);">+500 🪙</button>
-            ${player.penaltyActive ? `<button class="btn-primary btn-clear-penalty" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(244,63,94,0.2); border: 1px solid var(--color-rose);">Clear Penalty</button>` : ''}
-            <button class="btn-primary btn-reset-quests" data-id="${player.id}" style="font-size: 0.72rem; padding: 0.3rem 0.75rem; background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.35);">Reset Daily Quests</button>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-          <div style="padding: 1rem 1.25rem; border-right: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.65rem;">⚡ PROGRESSION</div>
-            <div style="font-size: 0.75rem; display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-              <span style="color: var(--text-muted);">XP</span>
-              <span style="color: var(--color-cyan); font-weight: 700;">${player.xp || 0} / ${player.xpToNextLevel || 500}</span>
-            </div>
-            <div style="height: 7px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 0.75rem;">
-              <div style="height: 100%; width: ${xpPct}%; background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 99px;"></div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.85rem;">
-              <div style="background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 0.45rem 0.65rem;">
-                <div style="font-size: 0.65rem; color: var(--text-dim);">Total Gold</div>
-                <div style="font-weight: 800; color: var(--color-gold);">🪙 ${(player.gold || 0).toLocaleString()}</div>
-              </div>
-              <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 0.45rem 0.65rem;">
-                <div style="font-size: 0.65rem; color: var(--text-dim);">Streak</div>
-                <div style="font-weight: 800; color: var(--color-emerald);">🔥 ${player.streakDays || 0} Days</div>
-              </div>
-            </div>
-            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">📊 7 STAT ATTRIBUTES</div>
-            ${statsHTML}
-          </div>
-
-          <div style="padding: 1rem 1.25rem;">
-            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.65rem;">📜 DAILY QUEST TRACKER</div>
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem;">
-              <div style="flex: 1; height: 9px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
-                <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #8b5cf6, #10b981); border-radius: 99px;"></div>
-              </div>
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-emerald); white-space: nowrap;">${done} / ${total} (${pct}%)</span>
-            </div>
-            <div style="max-height: 180px; overflow-y: auto; margin-bottom: 0.85rem;">
-              ${allQuestsHTML || '<div style="font-size: 0.75rem; color: var(--text-dim);">No quests</div>'}
-            </div>
-            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.45rem;">⚔️ DAILY ESSENTIALS</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
-              ${[['Push-ups', essentials.pushups, 100], ['Sit-ups', essentials.situps, 100], ['Squats', essentials.squats, 100], ['Run (km)', essentials.km, 10]].map(([label, val, max]) => `
-                <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 0.4rem 0.5rem;">
-                  <div style="font-size: 0.65rem; color: var(--text-dim);">${label}</div>
-                  <div style="font-size: 0.8rem; font-weight: 700; color: ${val >= max ? 'var(--color-emerald)' : 'var(--color-pink)'}">${val} / ${max} ${val >= max ? '✓' : ''}</div>
-                </div>`).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
-          <div style="padding: 0.85rem 1.25rem; border-right: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">⚔️ EQUIPPED GEAR</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">${equippedHTML}</div>
-          </div>
-          <div style="padding: 0.85rem 1.25rem;">
-            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">📋 RECENT ACTIVITY LOG</div>
-            <div>${historyHTML}</div>
-          </div>
-        </div>
-      `;
-
-      box.querySelector('.btn-award-xp').addEventListener('click', e => {
-        sounds.playLevelUp();
-        this.adminAwardXP(e.currentTarget.dataset.id, 500);
-      });
-      box.querySelector('.btn-award-gold').addEventListener('click', e => {
-        sounds.playPurchase();
-        this.adminAwardGold(e.currentTarget.dataset.id, 500);
-      });
-      box.querySelector('.btn-reset-quests').addEventListener('click', e => {
-        sounds.playClick();
-        this.adminResetDailyQuests(e.currentTarget.dataset.id);
-      });
-      box.querySelector('.btn-clear-penalty')?.addEventListener('click', e => {
-        sounds.playClick();
-        this.adminClearPenalty(e.currentTarget.dataset.id);
-      });
-
-      container.appendChild(box);
-    });
-  }
-
-  async adminAwardXP(playerId, amount) {
-    const target = this.allPlayers.find(p => p.id === playerId);
-    if (!target) return;
-    target.xp = (target.xp || 0) + amount;
-    if (this.db && window.FirebaseModules) {
-      const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { xp: target.xp }, { merge: true }).catch(() => { });
-    }
-    alert(`👑 Awarded +${amount} XP to ${target.name}!`);
-  }
-
-  async adminAwardGold(playerId, amount) {
-    const target = this.allPlayers.find(p => p.id === playerId);
-    if (!target) return;
-    target.gold = (target.gold || 0) + amount;
-    if (this.db && window.FirebaseModules) {
-      const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { gold: target.gold }, { merge: true }).catch(() => { });
-    }
-    alert(`🪙 Awarded +${amount} Gold to ${target.name}!`);
-  }
-
-  async adminClearPenalty(playerId) {
-    const target = this.allPlayers.find(p => p.id === playerId);
-    if (!target) return;
-    if (!confirm(`Clear Penalty Zone for ${target.name}?`)) return;
-    target.penaltyActive = false;
-    target.penaltyEndsAt = null;
-    if (this.db && window.FirebaseModules) {
-      const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { penaltyActive: false, penaltyEndsAt: null }, { merge: true }).catch(() => { });
-    }
-    alert(`✅ Penalty Zone cleared for ${target.name}!`);
-  }
-
-  async adminResetDailyQuests(playerId) {
-    const target = this.allPlayers.find(p => p.id === playerId);
-    if (!target) return;
-    if (!confirm(`Reset all daily quests for ${target.name}?`)) return;
-    target.quests = (target.quests || []).map(q => ({ ...q, completed: false }));
-    if (this.db && window.FirebaseModules) {
-      const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { quests: target.quests }, { merge: true }).catch(() => { });
-    }
-    alert(`🔄 Daily quests reset for ${target.name}!`);
-  }
-
-  // ─────────────────────────────────────────
-  // FIRESTORE SAVE
-  // ─────────────────────────────────────────
   async saveState() {
     if (!this.currentPlayer) return;
     localStorage.setItem('sl_player_v3', JSON.stringify(this.currentPlayer));
@@ -1435,16 +1030,11 @@ Return ONLY a raw JSON array (no markdown, no backticks) with objects:
       try {
         const { doc, setDoc } = window.FirebaseModules;
         await setDoc(doc(this.db, 'users', this.currentPlayer.id), this.currentPlayer, { merge: true });
-      } catch (e) {
-        console.warn('Firestore save:', e);
-      }
+      } catch (e) { console.warn(e); }
     }
   }
 }
 
-// ═══════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   window.app = new SoloLevelingApp();
 });
