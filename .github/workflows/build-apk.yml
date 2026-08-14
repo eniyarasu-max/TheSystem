@@ -18,21 +18,25 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Dependencies & Sync Capacitor
-        run: |
-          npm ci || npm install
-          npx cap add android || true
-          npx cap sync android
-
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Add Android Platform & Sync Capacitor
+        run: |
+          npx cap add android || true
+          npx cap sync android
 
       - name: Make Gradle Executable
-        run: chmod +x android/gradlew
+        run: |
+          if [ -d "android" ]; then
+            chmod +x android/gradlew
+          fi
 
       - name: Build Debug APK
         run: |
