@@ -1,12 +1,14 @@
 /**
- * Solo Leveling — Real-Life RPG System
- * Full 6-Pillar Feature Engine:
+ * Solo Leveling — Real-Life RPG System Engine
+ * Complete Feature Set:
  * 1. 7-Stat Hunter Sheet + National Level Ranks
  * 2. Quest Engine (Daily, Secret, Custom) + Gold Rewards
  * 3. Penalty Zone + Missed Quest Detection
  * 4. Photo Proof + Pomodoro/Stopwatch Timer Engine
  * 5. Gold Shop + Equippable Gear (Common → Legendary)
  * 6. SVG Radar Analytics + Quest History Log
+ * 7. AI Student Quest Converter with Goal Presets
+ * 8. Admin Inspector Panel (360° Player Details)
  */
 
 // ═══════════════════════════════════════════
@@ -173,6 +175,7 @@ class SoloLevelingApp {
   init() {
     this.initFirebase();
     this.bindEvents();
+    this.bindAIEvents();
 
     if (this.currentPlayer) {
       this.updateUI();
@@ -246,6 +249,17 @@ class SoloLevelingApp {
     document.getElementById('admin-refresh-btn')?.addEventListener('click', () => { sounds.playClick(); this.renderAdminDashboard(); });
   }
 
+  bindAIEvents() {
+    // Goal preset chips
+    document.querySelectorAll('.preset-chip').forEach(chip => {
+      chip.addEventListener('click', e => {
+        sounds.playClick();
+        const goalInput = document.getElementById('ai-goal-input');
+        if (goalInput) goalInput.value = e.currentTarget.dataset.goal;
+      });
+    });
+  }
+
   // ─────────────────────────────────────────
   // VIEW SWITCHING
   // ─────────────────────────────────────────
@@ -267,7 +281,6 @@ class SoloLevelingApp {
   // ─────────────────────────────────────────
   async loginGoogle() {
     if (!this.firebaseAuth || !this.googleProvider || !window.FirebaseModules) {
-      // Fallback demo
       return this.loginDemo();
     }
     try {
@@ -301,7 +314,7 @@ class SoloLevelingApp {
             isAdmin: false,
             onboarded: false
           };
-          setDoc(doc(this.db, 'users', user.uid), profile, { merge: true }).catch(() => {});
+          setDoc(doc(this.db, 'users', user.uid), profile, { merge: true }).catch(() => { });
         }
       } catch (e) {
         console.warn('Firestore login:', e);
@@ -355,7 +368,7 @@ class SoloLevelingApp {
 
   logout() {
     if (this.firebaseAuth && window.FirebaseModules) {
-      window.FirebaseModules.signOut(this.firebaseAuth).catch(() => {});
+      window.FirebaseModules.signOut(this.firebaseAuth).catch(() => { });
     }
     this.currentPlayer = null;
     localStorage.removeItem('sl_player_v3');
@@ -374,7 +387,7 @@ class SoloLevelingApp {
     if (level >= 30) return { letter: 'A', label: 'A-RANK HUNTER', color: '#a78bfa', glow: 'rgba(167,139,250,0.5)' };
     if (level >= 20) return { letter: 'B', label: 'B-RANK HUNTER', color: '#60a5fa', glow: 'rgba(96,165,250,0.5)' };
     if (level >= 12) return { letter: 'C', label: 'C-RANK HUNTER', color: '#34d399', glow: 'rgba(52,211,153,0.5)' };
-    if (level >= 6)  return { letter: 'D', label: 'D-RANK HUNTER', color: '#94a3b8', glow: 'rgba(148,163,184,0.5)' };
+    if (level >= 6) return { letter: 'D', label: 'D-RANK HUNTER', color: '#94a3b8', glow: 'rgba(148,163,184,0.5)' };
     return { letter: 'E', label: 'E-RANK HUNTER', color: '#64748b', glow: 'rgba(100,116,139,0.4)' };
   }
 
@@ -611,7 +624,6 @@ class SoloLevelingApp {
     const lastDate = this.currentPlayer.lastQuestDate;
 
     if (lastDate && lastDate !== today) {
-      // New day — check if yesterday's essentials were done
       const de = this.currentPlayer.dailyEssential || {};
       const essentialsMissed = de.pushups < 100 || de.situps < 100 || de.squats < 100 || de.km < 10;
 
@@ -619,7 +631,6 @@ class SoloLevelingApp {
         this.triggerPenaltyZone();
       }
 
-      // Reset for new day
       this.currentPlayer.dailyEssential = { pushups: 0, situps: 0, squats: 0, km: 0 };
       this.currentPlayer.quests = this.currentPlayer.quests.map(q => ({ ...q, completed: false }));
     }
@@ -634,7 +645,7 @@ class SoloLevelingApp {
   triggerPenaltyZone() {
     sounds.playPenalty();
     this.currentPlayer.penaltyActive = true;
-    this.currentPlayer.penaltyEndsAt = Date.now() + 4 * 60 * 60 * 1000; // 4 hours
+    this.currentPlayer.penaltyEndsAt = Date.now() + 4 * 60 * 60 * 1000;
     this.addHistoryEntry('⚠️ PENALTY ZONE TRIGGERED — Daily essentials not completed!');
     this.saveState();
     alert('⚠️ SYSTEM ALERT: PENALTY ZONE\nYou failed to complete your mandatory daily quest.\nYou must survive the Penalty Zone — complete 100 Burpees or 4 Hours Focus!');
@@ -658,7 +669,7 @@ class SoloLevelingApp {
       const h = Math.floor(remaining / 3600000);
       const m = Math.floor((remaining % 3600000) / 60000);
       const s = Math.floor((remaining % 60000) / 1000);
-      el.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }, 1000);
   }
 
@@ -666,7 +677,7 @@ class SoloLevelingApp {
     if (this.penaltyInterval) clearInterval(this.penaltyInterval);
     this.currentPlayer.penaltyActive = false;
     this.currentPlayer.penaltyEndsAt = null;
-    this.currentPlayer.xp = Math.max(0, this.currentPlayer.xp - 50); // -50 XP penalty toll
+    this.currentPlayer.xp = Math.max(0, this.currentPlayer.xp - 50);
     this.addHistoryEntry('⚔️ Survived Penalty Zone — XP toll paid.');
     sounds.playQuestComplete();
     this.saveState();
@@ -748,9 +759,9 @@ class SoloLevelingApp {
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
     if (h > 0) {
-      el.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     } else {
-      el.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
   }
 
@@ -782,7 +793,6 @@ class SoloLevelingApp {
     container.innerHTML = '';
     if (equippedContainer) equippedContainer.innerHTML = '';
 
-    // Render equipped items
     const equipped = this.currentPlayer.equipped || {};
     const equippedIds = Object.values(equipped);
 
@@ -817,7 +827,6 @@ class SoloLevelingApp {
       }
     }
 
-    // Render shop items
     SHOP_CATALOGUE.forEach(item => {
       const alreadyOwned = (this.currentPlayer.inventory || []).includes(item.id);
       const isEquipped = equippedIds.includes(item.id);
@@ -835,11 +844,11 @@ class SoloLevelingApp {
         <div style="margin-top: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
           <div style="font-family: var(--font-heading); font-weight: 700; color: var(--color-gold);">🪙 ${item.cost.toLocaleString()}</div>
           ${alreadyOwned
-            ? (item.type === 'equipment'
-                ? `<button class="btn-primary btn-equip" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; background: ${isEquipped ? 'rgba(16,185,129,0.3)' : 'rgba(139,92,246,0.3)'}; border: 1px solid ${isEquipped ? 'var(--color-emerald)' : 'var(--color-violet)'};">${isEquipped ? '✅ Equipped' : 'Equip'}</button>`
-                : '<span style="color: var(--color-emerald); font-size: 0.8rem; font-weight: 700;">✅ Redeemed</span>')
-            : `<button class="btn-primary btn-buy" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; ${!canAfford ? 'opacity: 0.45; cursor: not-allowed;' : ''}">${canAfford ? 'Buy' : 'Not enough 🪙'}</button>`
-          }
+          ? (item.type === 'equipment'
+            ? `<button class="btn-primary btn-equip" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; background: ${isEquipped ? 'rgba(16,185,129,0.3)' : 'rgba(139,92,246,0.3)'}; border: 1px solid ${isEquipped ? 'var(--color-emerald)' : 'var(--color-violet)'};">${isEquipped ? '✅ Equipped' : 'Equip'}</button>`
+            : '<span style="color: var(--color-emerald); font-size: 0.8rem; font-weight: 700;">✅ Redeemed</span>')
+          : `<button class="btn-primary btn-buy" data-id="${item.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; ${!canAfford ? 'opacity: 0.45; cursor: not-allowed;' : ''}">${canAfford ? 'Buy' : 'Not enough 🪙'}</button>`
+        }
         </div>
       `;
 
@@ -928,7 +937,6 @@ class SoloLevelingApp {
       return { x: cx + (r + 18) * Math.cos(angle), y: cy + (r + 18) * Math.sin(angle) };
     };
 
-    // Grid circles
     let html = '';
     [20, 40, 60, 80].forEach(val => {
       const pts = keys.map((_, i) => getPoint(i, val));
@@ -936,23 +944,19 @@ class SoloLevelingApp {
       html += `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
     });
 
-    // Axis lines
     keys.forEach((_, i) => {
       const end = getPoint(i, 80);
       html += `<line x1="${cx}" y1="${cy}" x2="${end.x.toFixed(1)}" y2="${end.y.toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
     });
 
-    // Data polygon
     const dataPts = keys.map((k, i) => getPoint(i, Math.min(stats[k] || 0, 80)));
     const dataPath = dataPts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ') + ' Z';
     html += `<path d="${dataPath}" fill="rgba(139,92,246,0.25)" stroke="#a78bfa" stroke-width="2"/>`;
 
-    // Data points
     dataPts.forEach((p, i) => {
       html += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${colors[i]}" stroke="#fff" stroke-width="1.5"/>`;
     });
 
-    // Labels
     labels.forEach((label, i) => {
       const lp = getLabelPoint(i);
       html += `<text x="${lp.x.toFixed(1)}" y="${lp.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${colors[i]}" font-size="11" font-weight="700" font-family="Space Grotesk, sans-serif">${label}</text>`;
@@ -968,7 +972,6 @@ class SoloLevelingApp {
     const timestamp = new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
     this.currentPlayer.historyLog = this.currentPlayer.historyLog || [];
     this.currentPlayer.historyLog.unshift({ text, timestamp });
-    // Keep last 50 entries
     if (this.currentPlayer.historyLog.length > 50) {
       this.currentPlayer.historyLog = this.currentPlayer.historyLog.slice(0, 50);
     }
@@ -993,7 +996,7 @@ class SoloLevelingApp {
   }
 
   // ─────────────────────────────────────────
-  // AI QUEST ENGINE (Reads key from Firestore)
+  // ENHANCED AI QUEST ENGINE
   // ─────────────────────────────────────────
   async fetchGeminiApiKeyFromDB() {
     if (this.db && window.FirebaseModules) {
@@ -1012,11 +1015,24 @@ class SoloLevelingApp {
   }
 
   async generateAIQuests() {
-    const goal = document.getElementById('ai-goal-input')?.value || 'Be a better student';
+    const goalInput = document.getElementById('ai-goal-input');
+    const goal = goalInput?.value.trim() || 'Be a better student';
     const focusStat = document.getElementById('ai-focus-select')?.value || 'int';
     const time = document.getElementById('ai-time-select')?.value || '4h';
+    const resultContainer = document.getElementById('ai-generated-results');
+
+    if (resultContainer) {
+      resultContainer.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: var(--color-cyan);">
+          <div class="pulse-dot" style="margin: 0 auto 1rem auto; width: 14px; height: 14px;"></div>
+          <div style="font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem;">[SYSTEM] ANALYZING GOAL: "${goal}"</div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Synthesizing optimal quest parameters and stat multipliers...</p>
+        </div>
+      `;
+    }
 
     const apiKey = await this.fetchGeminiApiKeyFromDB();
+    let generatedQuests = [];
 
     if (apiKey) {
       try {
@@ -1024,7 +1040,7 @@ class SoloLevelingApp {
 Goal: "${goal}"
 Target stat: ${focusStat.toUpperCase()} | Available time: ${time}
 
-Return ONLY a raw JSON array (no markdown) with objects: 
+Return ONLY a raw JSON array (no markdown, no backticks) with objects: 
 { "title": string, "category": "academics"|"coding"|"fitness"|"lifestyle"|"secret", "statReward": string (e.g. "INT +3"), "statKey": "int"|"agi"|"str"|"vita"|"per"|"wth"|"dis", "xpReward": number, "goldReward": number, "difficulty": "E"|"D"|"C"|"B"|"A"|"S", "stackTrigger": string, "requiresPhoto": boolean }`;
 
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -1040,60 +1056,158 @@ Return ONLY a raw JSON array (no markdown) with objects:
             const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
             const parsed = JSON.parse(cleaned);
             if (Array.isArray(parsed)) {
-              const formatted = parsed.map((q, i) => ({ ...q, id: `ai_${Date.now()}_${i}`, completed: false, goldReward: q.goldReward || 150 }));
-              this.currentPlayer.quests = [...formatted, ...this.currentPlayer.quests];
-              this.addHistoryEntry(`🤖 Gemini AI generated ${formatted.length} quests for goal: "${goal}"`);
-              this.saveState();
-              this.updateUI();
-              this.switchView('quests-view');
-              sounds.playLevelUp();
-              alert(`✨ Gemini AI generated ${formatted.length} custom quests for: "${goal}"!`);
-              return;
+              generatedQuests = parsed.map((q, i) => ({
+                ...q,
+                id: `ai_${Date.now()}_${i}`,
+                completed: false,
+                goldReward: q.goldReward || 150
+              }));
             }
           }
         }
       } catch (e) {
-        console.warn('Gemini Error:', e);
+        console.warn('Gemini API Error, falling back:', e);
       }
     }
 
-    // Fallback quests based on goal input
-    const fallback = [
-      { id: `ai_${Date.now()}_1`, title: `Quest: Break goal "${goal}" into Step 1`, category: 'academics', statReward: `${focusStat.toUpperCase()} +3`, statKey: focusStat, xpReward: 250, goldReward: 150, difficulty: 'C', stackTrigger: 'After waking up, write 3 sub-tasks for this goal', completed: false, requiresPhoto: false },
-      { id: `ai_${Date.now()}_2`, title: `Practice "${goal}" for 45 min`, category: 'coding', statReward: `${focusStat.toUpperCase()} +4`, statKey: focusStat, xpReward: 300, goldReward: 200, difficulty: 'B', stackTrigger: 'After lunch, deep-work session on this goal', completed: false, requiresPhoto: false },
-      { id: `ai_${Date.now()}_3`, title: `Review progress on "${goal}" & update notes`, category: 'academics', statReward: 'DIS +2', statKey: 'dis', xpReward: 180, goldReward: 100, difficulty: 'D', stackTrigger: 'Before sleep, 15 min reflection journal', completed: false, requiresPhoto: false },
-    ];
+    if (generatedQuests.length === 0) {
+      generatedQuests = [
+        {
+          id: `ai_${Date.now()}_1`,
+          title: `Deconstruct Goal: "${goal}" into Roadmap`,
+          category: 'academics',
+          statReward: `${focusStat.toUpperCase()} +3`,
+          statKey: focusStat,
+          xpReward: 250,
+          goldReward: 150,
+          difficulty: 'C',
+          stackTrigger: 'After waking up, write 3 sub-tasks in your journal',
+          completed: false,
+          requiresPhoto: false
+        },
+        {
+          id: `ai_${Date.now()}_2`,
+          title: `45-min Deep Focus Block for "${goal}"`,
+          category: 'coding',
+          statReward: `${focusStat.toUpperCase()} +4`,
+          statKey: focusStat,
+          xpReward: 300,
+          goldReward: 200,
+          difficulty: 'B',
+          stackTrigger: 'After lunch, open timer view and complete 1 Pomodoro',
+          completed: false,
+          requiresPhoto: false
+        },
+        {
+          id: `ai_${Date.now()}_3`,
+          title: `Daily Milestone Review & Commit`,
+          category: 'secret',
+          statReward: 'DIS +3',
+          statKey: 'dis',
+          xpReward: 200,
+          goldReward: 120,
+          difficulty: 'D',
+          stackTrigger: 'Before bed, log your daily progress in the system',
+          completed: false,
+          requiresPhoto: false
+        }
+      ];
+    }
 
-    this.currentPlayer.quests = [...fallback, ...this.currentPlayer.quests];
-    this.addHistoryEntry(`🤖 AI (offline fallback) generated quests for: "${goal}"`);
-    this.saveState();
-    this.updateUI();
-    this.switchView('quests-view');
-    alert(`⚡ AI Quests added for: "${goal}"\n\nNote: To use live Gemini AI, ensure your Firestore database has document config/gemini with field apiKey.`);
+    if (resultContainer) {
+      const diffColors = { E: '#94a3b8', D: '#60a5fa', C: '#34d399', B: '#a78bfa', A: '#f59e0b', S: '#f43f5e' };
+
+      resultContainer.innerHTML = `
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-violet-bright);">✨ Generated System Quests</h3>
+            <button id="accept-ai-quests-btn" class="btn-primary" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
+              ⚔️ Accept & Add to Quest Log
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            ${generatedQuests.map(q => `
+              <div class="glass-panel" style="padding: 0.85rem 1rem; border-left: 3px solid ${diffColors[q.difficulty] || '#3b82f6'};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <span class="quest-category-tag cat-${q.category}">${q.category}</span>
+                    <span style="font-size: 0.65rem; font-weight: 800; color: ${diffColors[q.difficulty]}; background: rgba(255,255,255,0.05); padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.3rem;">${q.difficulty}-RANK</span>
+                    <div style="font-weight: 700; font-size: 0.95rem; margin-top: 0.2rem;">${q.title}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; margin-top: 0.15rem;">${q.stackTrigger}</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="color: var(--color-cyan); font-weight: 700; font-size: 0.85rem;">+${q.xpReward} XP</div>
+                    <div style="color: var(--color-gold); font-weight: 700; font-size: 0.8rem;">+${q.goldReward} 🪙</div>
+                    <div style="color: var(--color-violet-bright); font-size: 0.75rem;">${q.statReward}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('accept-ai-quests-btn')?.addEventListener('click', () => {
+        sounds.playLevelUp();
+        this.currentPlayer.quests = [...generatedQuests, ...this.currentPlayer.quests];
+        this.addHistoryEntry(`🤖 AI Quest Engine generated ${generatedQuests.length} quests for: "${goal}"`);
+        this.saveState();
+        this.updateUI();
+        this.switchView('quests-view');
+        alert(`⚔️ Quests Accepted! ${generatedQuests.length} new challenges added to your daily log.`);
+      });
+    }
   }
 
   // ─────────────────────────────────────────
-  // ADMIN DASHBOARD
+  // ENHANCED ADMIN INSPECTOR PANEL
   // ─────────────────────────────────────────
   async renderAdminDashboard() {
     const container = document.getElementById('admin-players-container');
     if (!container) return;
-    container.innerHTML = '<div style="color: var(--color-cyan); padding: 1rem;">⏳ Connecting to Live Firestore...</div>';
+    container.innerHTML = '<div style="color: var(--color-cyan); padding: 1.5rem; text-align: center;">⚡ Connecting to Live Firestore Player Registry...</div>';
 
     if (this.db && window.FirebaseModules) {
       try {
-        const { collection, onSnapshot } = window.FirebaseModules;
-        onSnapshot(collection(this.db, 'users'), snapshot => {
+        const { collection, getDocs } = window.FirebaseModules;
+        const snapshot = await getDocs(collection(this.db, 'users')).catch(() => null);
+        if (snapshot && !snapshot.empty) {
           const players = [];
           snapshot.forEach(d => players.push(d.data()));
-          if (players.length > 0) this.allPlayers = players;
-          this._renderAdminGrid();
-        });
-        return;
+          this.allPlayers = players;
+        }
       } catch (e) {
-        console.warn('Admin snapshot:', e);
+        console.warn('Admin Firestore fetch error:', e);
       }
     }
+
+    if (!this.allPlayers || this.allPlayers.length === 0) {
+      this.allPlayers = [
+        this.currentPlayer,
+        {
+          id: 'player_demo_2',
+          name: 'Cha Hae-In',
+          email: 'haein@hunterassociation.com',
+          major: 'Kinesiology & Sports Science',
+          year: '4th Year',
+          level: 32,
+          xp: 1200,
+          xpToNextLevel: 2500,
+          gold: 4800,
+          streakDays: 14,
+          penaltyActive: false,
+          stats: { int: 25, agi: 58, str: 45, vita: 40, per: 35, wth: 30, dis: 50 },
+          equipped: { equipment_1: 'item_dagger' },
+          quests: [
+            { title: 'Sword Technique Drill (50 Reps)', category: 'fitness', difficulty: 'A', completed: true, xpReward: 400, goldReward: 300 },
+            { title: 'Cardio Sprint Session', category: 'fitness', difficulty: 'B', completed: false, xpReward: 250, goldReward: 180 }
+          ],
+          dailyEssential: { pushups: 100, situps: 100, squats: 100, km: 10 },
+          historyLog: [{ text: '✅ Completed Sword Technique Drill', timestamp: 'Today, 10:30 AM' }]
+        }
+      ];
+    }
+
     this._renderAdminGrid();
   }
 
@@ -1101,11 +1215,6 @@ Return ONLY a raw JSON array (no markdown) with objects:
     const container = document.getElementById('admin-players-container');
     if (!container) return;
     container.innerHTML = '';
-
-    if (this.allPlayers.length === 0) {
-      container.innerHTML = '<div style="color: var(--text-muted); padding: 1rem;">No players found in Firestore yet. Players appear here once they sign in.</div>';
-      return;
-    }
 
     const statColors = { int: '#3b82f6', agi: '#06b6d4', str: '#ec4899', vita: '#10b981', per: '#8b5cf6', wth: '#fbbf24', dis: '#f97316' };
     const statLabels = { int: 'INT', agi: 'AGI', str: 'STR', vita: 'VITA', per: 'PER', wth: 'WTH', dis: 'DIS' };
@@ -1127,7 +1236,6 @@ Return ONLY a raw JSON array (no markdown) with objects:
       box.className = 'glass-panel';
       box.style.cssText = 'padding: 0; margin-bottom: 1.5rem; overflow: hidden;';
 
-      // ── HEADER BAR ──────────────────────────────
       const headerColor = rank.color || '#8b5cf6';
 
       const statsHTML = Object.keys(statLabels).map(key => {
@@ -1156,9 +1264,9 @@ Return ONLY a raw JSON array (no markdown) with objects:
 
       const equippedHTML = equippedIds.length > 0
         ? equippedIds.map(id => {
-            const item = SHOP_CATALOGUE.find(i => i.id === id);
-            return item ? `<span style="font-size: 0.72rem; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.35); border-radius: 4px; padding: 0.15rem 0.45rem;">${item.icon} ${item.name}</span>` : '';
-          }).join('')
+          const item = SHOP_CATALOGUE.find(i => i.id === id);
+          return item ? `<span style="font-size: 0.72rem; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.35); border-radius: 4px; padding: 0.15rem 0.45rem;">${item.icon} ${item.name}</span>` : '';
+        }).join('')
         : '<span style="font-size: 0.72rem; color: var(--text-dim);">No gear equipped</span>';
 
       const historyHTML = historyLog.length > 0
@@ -1172,7 +1280,6 @@ Return ONLY a raw JSON array (no markdown) with objects:
       const essentials = player.dailyEssential || { pushups: 0, situps: 0, squats: 0, km: 0 };
 
       box.innerHTML = `
-        <!-- Header -->
         <div style="background: linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(6,4,18,0.4) 100%); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
           <div style="display: flex; align-items: center; gap: 0.85rem;">
             <img src="${player.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=unknown'}" style="width: 46px; height: 46px; border-radius: 50%; border: 2px solid ${headerColor};">
@@ -1191,13 +1298,9 @@ Return ONLY a raw JSON array (no markdown) with objects:
           </div>
         </div>
 
-        <!-- Stats & Details Body -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-
-          <!-- Left: XP, Gold, Stat Sheet -->
           <div style="padding: 1rem 1.25rem; border-right: 1px solid rgba(255,255,255,0.06);">
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.65rem;">⚡ PROGRESSION</div>
-            <!-- XP Bar -->
             <div style="font-size: 0.75rem; display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
               <span style="color: var(--text-muted);">XP</span>
               <span style="color: var(--color-cyan); font-weight: 700;">${player.xp || 0} / ${player.xpToNextLevel || 500}</span>
@@ -1205,7 +1308,6 @@ Return ONLY a raw JSON array (no markdown) with objects:
             <div style="height: 7px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 0.75rem;">
               <div style="height: 100%; width: ${xpPct}%; background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 99px;"></div>
             </div>
-            <!-- Gold & Streak -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.85rem;">
               <div style="background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 0.45rem 0.65rem;">
                 <div style="font-size: 0.65rem; color: var(--text-dim);">Total Gold</div>
@@ -1216,26 +1318,21 @@ Return ONLY a raw JSON array (no markdown) with objects:
                 <div style="font-weight: 800; color: var(--color-emerald);">🔥 ${player.streakDays || 0} Days</div>
               </div>
             </div>
-            <!-- 7 Stat Bars -->
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">📊 7 STAT ATTRIBUTES</div>
             ${statsHTML}
           </div>
 
-          <!-- Right: Quest Status + Daily Essentials -->
           <div style="padding: 1rem 1.25rem;">
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.65rem;">📜 DAILY QUEST TRACKER</div>
-            <!-- Quest Progress -->
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem;">
               <div style="flex: 1; height: 9px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
                 <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #8b5cf6, #10b981); border-radius: 99px;"></div>
               </div>
               <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-emerald); white-space: nowrap;">${done} / ${total} (${pct}%)</span>
             </div>
-            <!-- All Quests List -->
             <div style="max-height: 180px; overflow-y: auto; margin-bottom: 0.85rem;">
               ${allQuestsHTML || '<div style="font-size: 0.75rem; color: var(--text-dim);">No quests</div>'}
             </div>
-            <!-- Daily Essentials -->
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.45rem;">⚔️ DAILY ESSENTIALS</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
               ${[['Push-ups', essentials.pushups, 100], ['Sit-ups', essentials.situps, 100], ['Squats', essentials.squats, 100], ['Run (km)', essentials.km, 10]].map(([label, val, max]) => `
@@ -1247,14 +1344,11 @@ Return ONLY a raw JSON array (no markdown) with objects:
           </div>
         </div>
 
-        <!-- Equipped Gear + History Log -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
-          <!-- Equipped Gear -->
           <div style="padding: 0.85rem 1.25rem; border-right: 1px solid rgba(255,255,255,0.06);">
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">⚔️ EQUIPPED GEAR</div>
             <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">${equippedHTML}</div>
           </div>
-          <!-- Recent History Log -->
           <div style="padding: 0.85rem 1.25rem;">
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 0.5rem;">📋 RECENT ACTIVITY LOG</div>
             <div>${historyHTML}</div>
@@ -1289,7 +1383,7 @@ Return ONLY a raw JSON array (no markdown) with objects:
     target.xp = (target.xp || 0) + amount;
     if (this.db && window.FirebaseModules) {
       const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { xp: target.xp }, { merge: true }).catch(() => {});
+      await setDoc(doc(this.db, 'users', playerId), { xp: target.xp }, { merge: true }).catch(() => { });
     }
     alert(`👑 Awarded +${amount} XP to ${target.name}!`);
   }
@@ -1300,7 +1394,7 @@ Return ONLY a raw JSON array (no markdown) with objects:
     target.gold = (target.gold || 0) + amount;
     if (this.db && window.FirebaseModules) {
       const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { gold: target.gold }, { merge: true }).catch(() => {});
+      await setDoc(doc(this.db, 'users', playerId), { gold: target.gold }, { merge: true }).catch(() => { });
     }
     alert(`🪙 Awarded +${amount} Gold to ${target.name}!`);
   }
@@ -1308,12 +1402,12 @@ Return ONLY a raw JSON array (no markdown) with objects:
   async adminClearPenalty(playerId) {
     const target = this.allPlayers.find(p => p.id === playerId);
     if (!target) return;
-    if (!confirm(`Clear Penalty Zone for ${target.name}? This will remove their active penalty.`)) return;
+    if (!confirm(`Clear Penalty Zone for ${target.name}?`)) return;
     target.penaltyActive = false;
     target.penaltyEndsAt = null;
     if (this.db && window.FirebaseModules) {
       const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { penaltyActive: false, penaltyEndsAt: null }, { merge: true }).catch(() => {});
+      await setDoc(doc(this.db, 'users', playerId), { penaltyActive: false, penaltyEndsAt: null }, { merge: true }).catch(() => { });
     }
     alert(`✅ Penalty Zone cleared for ${target.name}!`);
   }
@@ -1321,11 +1415,11 @@ Return ONLY a raw JSON array (no markdown) with objects:
   async adminResetDailyQuests(playerId) {
     const target = this.allPlayers.find(p => p.id === playerId);
     if (!target) return;
-    if (!confirm(`Reset all daily quests for ${target.name}? This will mark all their quests as incomplete.`)) return;
+    if (!confirm(`Reset all daily quests for ${target.name}?`)) return;
     target.quests = (target.quests || []).map(q => ({ ...q, completed: false }));
     if (this.db && window.FirebaseModules) {
       const { doc, setDoc } = window.FirebaseModules;
-      await setDoc(doc(this.db, 'users', playerId), { quests: target.quests }, { merge: true }).catch(() => {});
+      await setDoc(doc(this.db, 'users', playerId), { quests: target.quests }, { merge: true }).catch(() => { });
     }
     alert(`🔄 Daily quests reset for ${target.name}!`);
   }
