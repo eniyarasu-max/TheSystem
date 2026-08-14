@@ -1,8 +1,7 @@
 {
   "appId": "com.sololeveling.collegerpg",
   "appName": "Solo Leveling RPG",
-  "webDir": ".",
-  "bundledWebRuntime": false,
+  "webDir": "www",
   "server": {
     "androidScheme": "https"
   },
