@@ -111,18 +111,23 @@
           </svg>
           Sign In with Google
         </button>
+
+        <div style="margin: 1rem 0; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">- OFFLINE DEMO MODE -</div>
+
+        <button class="btn-primary demo-login-btn" data-role="player" style="width: 100%; padding: 0.65rem; background: rgba(139, 92, 246, 0.15); border: 1px solid var(--color-violet); font-size: 0.85rem;">
+          🎮 Enter as Demo Player
+        </button>
       </div>
     </section>
 
-    <!-- VIEW: ONBOARDING (new players only, before first Status Window) -->
+    <!-- VIEW: ONBOARDING -->
     <section id="onboarding-view" class="view-section">
       <div class="glass-panel ai-card" style="max-width: 650px; margin: 2rem auto;">
         <h2 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.35rem;">
           📋 Player Registration
         </h2>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Tell the System about yourself. This powers your AI-generated daily quests — it's not just about
-          fitness, it covers academics, deep work, and lifestyle too.
+          Tell the System about yourself. This powers your AI-generated daily quests — covering academics, deep work, coding, and lifestyle.
         </p>
 
         <form id="onboarding-form">
@@ -158,7 +163,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">What do you want to focus on? (pick all that apply)</label>
+            <label class="form-label">What do you want to focus on?</label>
             <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.4rem;">
               <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
                 <input type="checkbox" class="onboard-focus-check" value="academics" checked> Academics
@@ -172,15 +177,7 @@
               <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
                 <input type="checkbox" class="onboard-focus-check" value="lifestyle" checked> Sleep / Lifestyle
               </label>
-              <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
-                <input type="checkbox" class="onboard-focus-check" value="extracurricular"> Extracurricular
-              </label>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Anything else the AI should know? (optional)</label>
-            <textarea id="onboard-bio" class="form-input" rows="2" placeholder="e.g. finals in 3 weeks, part-time job, early riser..."></textarea>
           </div>
 
           <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem;">
@@ -385,7 +382,7 @@
           <span style="color: var(--color-pink);">🤖</span> AI Student Task Analyst
         </h2>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
-          Input your college schedule & focus areas. The AI engine will analyze your workload and output tailored daily quests with difficulty scoring.
+          Input your college schedule & focus areas. The AI engine reads your API key directly from Firestore (<code style="color: var(--color-cyan);">config/gemini</code>) to output tailored daily quests.
         </p>
 
         <form id="ai-task-form">
@@ -441,17 +438,10 @@
         </div>
 
         <div class="glass-panel" style="margin-top: 1.5rem; padding: 1.25rem;">
-          <div class="section-title" style="margin-bottom: 0.75rem;"><span>🤖 AI Analyst Settings</span></div>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-            Set the Gemini API key once here — every player's "Generate AI Quests" button will use it.
-            Get a free key at <span style="color: var(--color-cyan);">aistudio.google.com/apikey</span>.
-            Note: this key is stored in Firestore and used from the browser, so treat it as semi-public —
-            use a key with usage limits, not one tied to sensitive billing.
+          <div class="section-title" style="margin-bottom: 0.75rem;"><span>🤖 Database Gemini API Key Status</span></div>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            The Gemini API key is loaded automatically from Firestore document <code style="color: var(--color-cyan);">config/gemini</code> (field: <code style="color: var(--color-cyan);">apiKey</code>).
           </p>
-          <div style="display: flex; gap: 0.6rem;">
-            <input type="password" id="admin-gemini-key-input" class="form-input" placeholder="Paste Gemini API key">
-            <button id="admin-save-gemini-key-btn" class="btn-primary" style="white-space: nowrap; padding: 0 1.25rem;">Save Key</button>
-          </div>
         </div>
       </div>
     </section>
@@ -485,9 +475,6 @@
     </a>
   </nav>
 
-  <!-- Capacitor Local Notifications (native Android reminders).
-       No-op / harmless when running in a plain browser tab — app.js checks
-       Capacitor.isNativePlatform() before using it. -->
   <script src="https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@6/dist/plugin.js"></script>
   <script src="app.js"></script>
   <script>
