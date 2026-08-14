@@ -1,6 +1,6 @@
 /**
  * Solo Leveling Gamified College Student RPG & Habit System
- * Direct Firestore Gemini API Key Integration with Offline Fallback & Resilient API Handling
+ * Direct Firestore Gemini API Key Integration (reads from config/gemini doc in DB)
  */
 
 // Web Audio API Synthesizer for RPG Sound Effects
@@ -357,29 +357,33 @@ class SoloLevelingApp {
   }
 
   async fetchGeminiApiKeyFromDB() {
-    // Check localStorage cache first
-    const cachedKey = localStorage.getItem('sl_cached_gemini_key');
-    if (cachedKey) return cachedKey;
-
     if (this.db && window.FirebaseModules) {
       try {
         const { doc, getDoc } = window.FirebaseModules;
         
-        // Fast 3-second timeout to prevent offline hanging
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
-        const fetchPromise = getDoc(doc(this.db, 'config', 'gemini'));
-
-        const configSnap = await Promise.race([fetchPromise, timeoutPromise]);
-        if (configSnap && configSnap.exists && configSnap.exists() && configSnap.data().apiKey) {
-          const key = configSnap.data().apiKey;
-          localStorage.setItem('sl_cached_gemini_key', key);
-          return key;
+        // Check document IDs: "gemini", "Gemini", "GEMINI"
+        const docNames = ['gemini', 'Gemini', 'GEMINI'];
+        for (const name of docNames) {
+          try {
+            const configSnap = await getDoc(doc(this.db, 'config', name));
+            if (configSnap.exists()) {
+              const data = configSnap.data();
+              const key = data.apiKey || data.key || data.api_key;
+              if (key) {
+                localStorage.setItem('sl_cached_gemini_key', key);
+                return key;
+              }
+            }
+          } catch (e) {
+            // Next doc name
+          }
         }
       } catch (e) {
-        console.warn('Firestore config/gemini read notice:', e);
+        console.warn('Firestore config read notice:', e);
       }
     }
-    return null;
+    
+    return localStorage.getItem('sl_cached_gemini_key') || null;
   }
 
   async loginWithGoogleOAuth() {
@@ -413,9 +417,7 @@ class SoloLevelingApp {
         const { doc, getDoc, setDoc } = window.FirebaseModules;
         const userDocRef = doc(this.db, 'users', user.uid);
         
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
-        const fetchPromise = getDoc(userDocRef);
-        const userSnap = await Promise.race([fetchPromise, timeoutPromise]).catch(() => null);
+        const userSnap = await getDoc(userDocRef).catch(() => null);
 
         if (userSnap && userSnap.exists && userSnap.exists()) {
           existingProfile = userSnap.data();
@@ -832,7 +834,7 @@ Format strictly as JSON array of objects with keys: "title", "category" (one of:
     this.saveState();
     this.updateUI();
     this.switchView('quests-view');
-    alert('⚡ AI Quests generated! Note: To use live Gemini generative AI, ensure document config/gemini exists in your Firestore database with field apiKey = "YOUR_GEMINI_API_KEY".');
+    alert('⚡ AI Quests generated! Note: Ensure document config/gemini exists in your Firestore database with field apiKey = "YOUR_GEMINI_API_KEY".');
   }
 
   async renderAdminDashboard() {
